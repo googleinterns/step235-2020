@@ -1,15 +1,29 @@
-* {
-  box-sizing: border-box;
+body { 
+  background: url(images/books.jpeg) no-repeat center center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  z-index: -1; 
 }
 
-body {
-  margin: 0;
+h1, h4, h3, p{
+  color: rgb(0, 102, 204);
 }
 
 #container {
-  max-width: 600px;
+  width: 50%;
   margin: 0 auto;
-  text-align: center;
+}
+
+.content-container{ 
+  margin-left: auto;
+  margin-right:auto;
+  width:700px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 .clearfix {
@@ -50,4 +64,42 @@ body {
     height: 40px;
     width: 40px;
   }
+}
+
+.widget-container {
+  width: 300px;
+  bottom: 0px;
+  right: 15px;
+  position: fixed;
+}
+
+.menu-container {
+  top: 10px;
+  left: 10px;
+  position: fixed;
+  width: 180px;
+}
+
+.menu-container a,
+.menu-container h3 {
+  background-color: rgba(161, 210, 230, 0.562);
+  color: rgb(8, 65, 163);
+  display: block;
+  padding: 12px;
+  text-decoration: none;
+}
+
+.menu-container h3 {
+  margin: 0;
+}
+
+.menu-container a:hover {
+  background-color: rgb(2, 66, 92);
+  color:white;
+  transition: 0.4 s;
+}
+
+.menu-container a.active {
+  background-color: rgb(2, 66, 92);
+  color: white;
 }
