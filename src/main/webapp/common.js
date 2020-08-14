@@ -52,7 +52,7 @@ function addMenu() {
   menuElement.append(home);
   const address = document.createElement('a');
   address.innerText = 'Set/Edit address';
-  address.href = 'address/html';
+  address.href = 'address.html';
   menuElement.append(address);
   const bookshelves = document.createElement('a');
   bookshelves.innerText = 'See your bookshelves';
