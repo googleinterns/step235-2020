@@ -80,7 +80,9 @@ var signInWithPopup = function() {
  * @param {!firebase.User} user
  */
 var handleSignedInUser = function(user) {
+  // This function should only be reached if the user is signed in.
   if (window.location.pathname !== '/loggedIn.html') {
+    // User will be redirected if he is not on the right page.
     window.location.pathname = '/loggedIn.html';
   }
   if (document.getElementById('user-signed-in')) {
@@ -111,7 +113,9 @@ var handleSignedInUser = function(user) {
  * Displays the UI for a signed out user.
  */
 var handleSignedOutUser = function() {
+  // This function should only be reached if the user is signed out.
   if (window.location.pathname !== '/index.html') {
+    // User will be redirected if he is not on the right page.
     window.location.pathname = '/index.html';
   }
   if (document.getElementById('user-signed-in')) {
