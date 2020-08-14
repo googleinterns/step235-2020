@@ -1,15 +1,31 @@
+body { 
+  background: url(images/background.jpeg) no-repeat center center fixed; 
+  -webkit-background-size: cover;
+  -moz-background-size: cover;
+  -o-background-size: cover;
+  background-size: cover;
+  z-index: -1; 
+}
+
+h1, p {
+  color: rgb(0, 102, 204);
+}
+
+#content-container{ 
+  margin-left: auto;
+  margin-right:auto;
+  width:700px;
+}
+
+#left-container {
+  top: 10px;
+  left: 10px;
+  position: fixed;
+  width: 200px;
+}
+
 * {
   box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-}
-
-#container {
-  max-width: 600px;
-  margin: 0 auto;
-  text-align: center;
 }
 
 .clearfix {
@@ -50,4 +66,11 @@ body {
     height: 40px;
     width: 40px;
   }
+}
+
+#widget-container {
+  width: 300px;
+  bottom: 0px;
+  right: 15px;
+  position: fixed;
 }
