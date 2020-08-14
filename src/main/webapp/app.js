@@ -21,38 +21,38 @@
  */
 function getUiConfig() {
   return {
-    'callbacks': {
+    callbacks: {
       // Called when the user has been successfully signed in.
-      'signInSuccessWithAuthResult': function(authResult, redirectUrl) {
+      signInSuccessWithAuthResult: function(authResult, redirectUrl) {
         if (authResult.user) {
           handleSignedInUser(authResult.user);
         }
         if (authResult.additionalUserInfo) {
-          document.getElementById('is-new-user').textContent =
-              authResult.additionalUserInfo.isNewUser ?
-              'New User' : 'Existing User';
+          document.getElementById('is-new-user').textContent = authResult.additionalUserInfo.isNewUser
+            ? 'New User'
+            : 'Existing User';
         }
-        
+
         return true;
-      }
+      },
     },
     // Opens IDP Providers sign-in flow in a popup.
-    'signInFlow': 'popup',
-    'signInSuccessUrl' : '/loggedIn.html',
-    'signInOptions': [
+    signInFlow: 'popup',
+    signInSuccessUrl: '/loggedIn.html',
+    signInOptions: [
       {
         provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID,
         // Required to enable ID token credentials for this provider.
-        clientId: CLIENT_ID
-      }
+        clientId: CLIENT_ID,
+      },
     ],
     // Terms of service url.
-    'tosUrl': 'https://www.google.com',
+    tosUrl: 'https://www.google.com',
     // Privacy policy url.
-    'privacyPolicyUrl': 'https://www.google.com',
-    'credentialHelper': CLIENT_ID && CLIENT_ID != 'YOUR_OAUTH_CLIENT_ID' ?
-        firebaseui.auth.CredentialHelper.GOOGLE_YOLO :
-        firebaseui.auth.CredentialHelper.NONE
+    privacyPolicyUrl: 'https://www.google.com',
+    credentialHelper: CLIENT_ID && CLIENT_ID != 'YOUR_OAUTH_CLIENT_ID'
+      ? firebaseui.auth.CredentialHelper.GOOGLE_YOLO
+      : firebaseui.auth.CredentialHelper.NONE,
   };
 }
 
@@ -80,35 +80,46 @@ var signInWithPopup = function() {
  * @param {!firebase.User} user
  */
 var handleSignedInUser = function(user) {
-  document.getElementById('user-signed-in').style.display = 'block';
-  document.getElementById('user-signed-out').style.display = 'none';
-  document.getElementById('name').textContent = user.displayName;
-  document.getElementById('email').textContent = user.email;
-  document.getElementById('phone').textContent = user.phoneNumber;
-  if (user.photoURL) {
-    var photoURL = user.photoURL;
-    // Append size to the photo URL for Google hosted images to avoid requesting
-    // the image with its original resolution (using more bandwidth than needed)
-    // when it is going to be presented in smaller size.
-    if ((photoURL.indexOf('googleusercontent.com') != -1) ||
-        (photoURL.indexOf('ggpht.com') != -1)) {
-      photoURL = photoURL + '?sz=' +
-          document.getElementById('photo').clientHeight;
+  if (window.location.pathname !== '/loggedIn.html') {
+    window.location.pathname = '/loggedIn.html';
+  }
+  if (document.getElementById('user-signed-in')) {
+    document.getElementById('user-signed-in').style.display = 'block';
+    document.getElementById('name').textContent = user.displayName;
+    document.getElementById('email').textContent = user.email;
+    document.getElementById('phone').textContent = user.phoneNumber;
+    if (user.photoURL) {
+      var photoURL = user.photoURL;
+      // Append size to the photo URL for Google hosted images to avoid requesting
+      // the image with its original resolution (using more bandwidth than needed)
+      // when it is going to be presented in smaller size.
+      if (photoURL.indexOf('googleusercontent.com') != -1 || photoURL.indexOf('ggpht.com') != -1) {
+        photoURL = photoURL + '?sz=' + document.getElementById('photo').clientHeight;
+      }
+      document.getElementById('photo').src = photoURL;
+      document.getElementById('photo').style.display = 'block';
+    } else {
+      document.getElementById('photo').style.display = 'none';
     }
-    document.getElementById('photo').src = photoURL;
-    document.getElementById('photo').style.display = 'block';
-  } else {
-    document.getElementById('photo').style.display = 'none';
+  }
+  if (document.getElementById('user-signed-out')) {
+    document.getElementById('user-signed-out').style.display = 'none';
   }
 };
-
 
 /**
  * Displays the UI for a signed out user.
  */
 var handleSignedOutUser = function() {
-  document.getElementById('user-signed-in').style.display = 'none';
-  document.getElementById('user-signed-out').style.display = 'block';
+  if (window.location.pathname !== '/index.html') {
+    window.location.pathname = '/index.html';
+  }
+  if (document.getElementById('user-signed-in')) {
+    document.getElementById('user-signed-in').style.display = 'none';
+  }
+  if (document.getElementById('user-signed-out')) {
+    document.getElementById('user-signed-out').style.display = 'block';
+  }
   ui.start('#firebaseui-container', getUiConfig());
 };
 
@@ -130,9 +141,12 @@ var deleteAccount = function() {
       firebase.auth().signOut().then(function() {
         // The timeout allows the message to be displayed after the UI has
         // changed to the signed out state.
-        setTimeout(function() {
-          alert('Please sign in again to delete your account.');
-        }, 1);
+        setTimeout(
+          function() {
+            alert('Please sign in again to delete your account.');
+          },
+          1
+        );
       });
     }
   });
@@ -142,17 +156,20 @@ var deleteAccount = function() {
  * Initializes the app.
  */
 var initApp = function() {
-  document.getElementById('sign-out').addEventListener('click', function() {
-    firebase.auth().signOut();
-    // Redirect to log in page.
-    window.location.href = 'index.html';
-  });
-  document.getElementById('delete-account').addEventListener(
-      'click', function() {
-        deleteAccount();
-        // Redirect to log in page.
-        window.location.href = 'index.html';
-      });
+  if (document.getElementById('sign-out')) {
+    document.getElementById('sign-out').addEventListener('click', function() {
+      firebase.auth().signOut();
+      // Redirect to log in page.
+      window.location.href = 'index.html';
+    });
+  }
+  if (document.getElementById('delete-account')) {
+    document.getElementById('delete-account').addEventListener('click', function() {
+      deleteAccount();
+      // Redirect to log in page.
+      window.location.href = 'index.html';
+    });
+  }
 };
 
 window.addEventListener('load', initApp);
