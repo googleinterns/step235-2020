@@ -144,10 +144,14 @@ var deleteAccount = function() {
 var initApp = function() {
   document.getElementById('sign-out').addEventListener('click', function() {
     firebase.auth().signOut();
+    // Redirect to log in page.
+    window.location.href = 'index.html';
   });
   document.getElementById('delete-account').addEventListener(
       'click', function() {
         deleteAccount();
+        // Redirect to log in page.
+        window.location.href = 'index.html';
       });
 };
 
