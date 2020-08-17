@@ -75,6 +75,15 @@ var signInWithPopup = function() {
   window.open(getWidgetUrl(), 'Sign In', 'width=985,height=735');
 };
 
+function verifyUserIDToken(user) {
+  firebase.auth().currentUser.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+    console.log(`idToken is ${idToken}`);
+  }).catch(function(error) {
+  // Handle error
+    alert("Invalid code");
+  });
+}
+
 /**
  * Displays the UI for a signed in user.
  * @param {!firebase.User} user
@@ -85,6 +94,9 @@ var handleSignedInUser = function(user) {
     // User will be redirected if he is not on the right page.
     window.location.pathname = '/loggedIn.html';
   }
+
+  verifyUserIDToken(user);
+
   if (document.getElementById('user-signed-in')) {
     document.getElementById('user-signed-in').style.display = 'block';
     document.getElementById('name').textContent = user.displayName;
@@ -130,9 +142,13 @@ var handleSignedOutUser = function() {
 // Listen to change in auth state so it displays the correct UI for when
 // the user is signed in or not.
 firebase.auth().onAuthStateChanged(function(user) {
-  document.getElementById('loading').style.display = 'none';
+  if (document.getElementById('loading')) {
+    document.getElementById('loading').style.display = 'none';
+  }
+  if (document.getElementById('loaded')) {
   document.getElementById('loaded').style.display = 'block';
   user ? handleSignedInUser(user) : handleSignedOutUser();
+  }
 });
 
 /**

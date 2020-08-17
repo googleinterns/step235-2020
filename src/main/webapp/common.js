@@ -15,6 +15,20 @@
 /**
  * Common methods for both the app page.
  */
+
+/**
+ * Set the idToken input value so that it can be sent to the server
+ */
+function setIdToken() {
+  if (document.getElementById("idToken")) {
+    firebase.auth().currentUser.getIdToken(/* forceRefresh */ false).then(function(idToken) {
+      document.getElementById("idToken").value = idToken;
+    });
+  } else {
+    //TODO[ak47na]: handle error when idToken field is not loaded
+    console.log("Error");
+  }
+}
  
 /**
  * @param {string} queryString The full query string.
@@ -60,7 +74,7 @@ function addMenu() {
   menuElement.append(bookshelves);
   const delivery_request = document.createElement('a');
   delivery_request.innerText = 'Request a delivery!';
-  delivery_request.href = 'courierRequest.html';
+  delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
   see_journeys.innerText = 'See journeys';

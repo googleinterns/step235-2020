@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>Request a delivery</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/7.4.0/firebase.js"></script>
+    <script src="config.js"></script>
+    <!-- Initialize firebase using CDN -->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+    <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+   
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+  </head>
+  <body onload="addMenu()">
+    <script src="app.js"></script>
+    <script src="common.js"></script>
+    <div class="menu-container"></div>
+
+    <div class="content-container">
+      <h1>Request a delivery<h1>
+      <form id="delivery-form" method="POST" action="/new-delivery-request" oninput="setIdToken()">
+      <label for="delivery-date"><p>Choose the date of your journey:<p></label>
+      <input type="date" id="delivery-date" name="delivery-date">
+      <label for="start-time"><p>Choose the starting time of your journey:<p></label>
+      <input type="time" id="start-time" name="start-time">
+      <label for="end-time"><p>Choose the ending time of your journey:<p></label>
+      <input type="time" id="end-time" name="end-time">
+      <label for="max-stops"><p>Choose the maximum number of stops: The value must be at most 25.<p></label>
+      <input type="number" id="max-stops" name="max-stops" value="25">
+      <input type="hidden" name="idToken" id="idToken"/>
+      <input type="submit" value="Send Request" >
+      </form>
+    </div>
+  </body>
+<html>

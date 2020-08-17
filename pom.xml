@@ -23,6 +23,19 @@
       <version>4.0.1</version>
       <scope>provided</scope>
     </dependency>
+
+    <dependency>
+     <groupId>com.google.appengine</groupId>
+     <artifactId>appengine-api-1.0-sdk</artifactId>
+     <version>1.9.59</version>
+    </dependency>
+
+    <dependency>
+      <groupId>com.google.firebase</groupId>
+      <artifactId>firebase-admin</artifactId>
+      <version>6.16.0</version>
+    </dependency>
+    
   </dependencies>
 
   <build>

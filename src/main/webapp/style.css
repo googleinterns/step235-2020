@@ -118,3 +118,7 @@ button, input[type="submit"] {
   padding-inline-end: 12px;
   padding-inline-start: 12px;
 }
+
+input { 
+  display: block; 
+} 
