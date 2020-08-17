@@ -103,3 +103,18 @@ h1, h4, h3, p{
   background-color: rgb(2, 66, 92);
   color: white;
 }
+
+button, input[type="submit"] {
+  background-color: rgb(2, 66, 92);
+  color:white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  display: inline-block;
+  height: 36px;
+  line-height: 36px;
+  padding-inline-end: 12px;
+  padding-inline-start: 12px;
+}

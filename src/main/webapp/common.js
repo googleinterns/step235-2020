@@ -13,7 +13,7 @@
  */
 
 /**
- * Common methods for both the main app page and standalone widget.
+ * Common methods for both the app page.
  */
  
 /**
@@ -35,4 +35,35 @@ function parseQueryString(queryString) {
     }
   }
   return config;
+}
+
+/**
+ * Method that builds for every page with a "menu-container div" a navigable menu.
+ */
+
+function addMenu() {
+  const menuElement = document.getElementsByClassName('menu-container')[0];
+  const header = document.createElement('h3');
+  header.innerText = 'MENU';
+  menuElement.append(header);
+  const home = document.createElement('a');
+  home.innerText = 'Home';
+  home.href = 'loggedIn.html';
+  menuElement.append(home);
+  const address = document.createElement('a');
+  address.innerText = 'Set/Edit address';
+  address.href = 'address.html';
+  menuElement.append(address);
+  const bookshelves = document.createElement('a');
+  bookshelves.innerText = 'See your bookshelves';
+  bookshelves.href = 'bookshelves.html';
+  menuElement.append(bookshelves);
+  const delivery_request = document.createElement('a');
+  delivery_request.innerText = 'Request a delivery!';
+  delivery_request.href = 'courierRequest.html';
+  menuElement.append(delivery_request);
+  const see_journeys = document.createElement('a');
+  see_journeys.innerText = 'See journeys';
+  see_journeys.href = 'journeys.html';
+  menuElement.append(see_journeys);
 }

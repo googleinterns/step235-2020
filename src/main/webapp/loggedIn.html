@@ -13,19 +13,9 @@
     <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
     <script src="app.js"></script>
   </head>
-  <body>
-    <div class="menu-container">
-      <h3>Menu</h3>
-      <a href="loggedIn.html">Home</a>
-  
-      <a href="address.html">Set/Edit address</a>
-  
-      <a href="bookshelves.html">See your bookshelves</a>
-  
-      <a id="delivery-request-link" href="courierRequest.html">Request a delivery!</a>
-      
-      <a id="see-journeys-link" href="journeys.html">See journeys</a>
-    </div>
+  <body onload="addMenu()">
+
+    <div class="menu-container"></div>
 
     <div class="widget-container">
       <div id="loading">Loading...</div>
@@ -46,13 +36,6 @@
               <button id="sign-out">Sign Out</button>
               <button id="delete-account">Delete account</button>
             </p>
-          </div>
-          <div id="user-signed-out" class="hidden">
-            <h4>You are signed out.</h4>
-            <div id="firebaseui-spa">
-              <h5>Single Page Application mode:</h5>
-              <div id="firebaseui-container"></div>
-            </div>
           </div>
         </div>
       </div>
