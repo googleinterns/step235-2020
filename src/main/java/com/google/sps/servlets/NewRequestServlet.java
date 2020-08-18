@@ -72,7 +72,7 @@ public class NewRequestServlet extends HttpServlet {
     }
     
     // initialize firebase app with Google Application Defalut Credentials
-    FirebaseApp defaultApp = initializeFirebaseApp();
+    FirebaseApp defaultApp = initializeFirebaseApp(/* setOptions */ false);
     //check the name of defaultApp to make sure that the correct app is connected
     System.out.println(defaultApp.getName());
 
@@ -98,7 +98,11 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * Initialize firebase SDK and return the FirebaseApp object
    */
-  private FirebaseApp initializeFirebaseApp() {
+  private FirebaseApp initializeFirebaseApp(boolean setOptions) {
+    if (!setOptions) {
+      // initialize FirebaseApp with default options for testing purposes
+      return FirebaseApp.initializeApp();
+    }
     FirebaseOptions options = new FirebaseOptions.Builder()
     //.setCredentials(GoogleCredentials.getApplicationDefault()) 
     .setDatabaseUrl("https://com-alphabooks-step-2020.firebaseio.com")
