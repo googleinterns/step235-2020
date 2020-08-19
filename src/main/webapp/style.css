@@ -105,7 +105,7 @@ h1, h4, h3, p{
 }
 
 button, input[type="submit"] {
-  background-color: rgb(2, 66, 92);
+  background-color: rgb(0, 102, 204);
   color:white;
   border: none;
   border-radius: 6px;
@@ -114,11 +114,15 @@ button, input[type="submit"] {
   text-align: center;
   display: inline-block;
   height: 36px;
-  line-height: 36px;
   padding-inline-end: 12px;
   padding-inline-start: 12px;
 }
 
-input { 
-  display: block; 
-} 
+input, textarea { 
+  display: block;
+  padding: 12px 20px;
+  margin: 8px 0;
+  box-sizing: border-box;
+  border: 2px solid rgb(0, 102, 204);
+  border-radius: 4px;
+}
