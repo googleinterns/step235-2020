@@ -3,19 +3,27 @@
   <head>
     <meta charset="UTF-8">
     <title>AlphaBooks Library</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/7.4.0/firebase.js"></script>
+    <script src="config.js"></script>
+    <!-- Initialize firebase using CDN -->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
     <script src="common.js"></script>
+    <script src="app.js"></script>
     <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
   </head>
-  <body onload="addMenu()">
+  <body onload="addMenu();displayCurrentAddress()">
 
     <div class="menu-container"></div>
 
     <div class="content-container">
       <h3>Please set your address before you place an order.</h3>
       <p>Set your address here:</p>
-      <form method="POST" action="/user-info">
+      <form id="address-form "method="POST" action="/user-data" oninput="setIdToken()">
         <textarea id="address" name="address" rows="4" cols="40"></textarea>
-        <input id="submit-button-address" type="submit" value="Set address">
+        <input type="hidden" name="idToken" id="idToken"/>
+        <input id="submit-button" type="submit" value="Set address"/>
       </form>
     </div>
 

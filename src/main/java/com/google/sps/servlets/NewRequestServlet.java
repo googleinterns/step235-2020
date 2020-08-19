@@ -17,6 +17,8 @@ package com.google.sps.servlets;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.PreparedQuery;
+import com.google.appengine.api.datastore.Query;
 
 import com.google.firebase.auth.*;
 import com.google.firebase.FirebaseApp;
@@ -101,6 +103,7 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
 
+    markUserAsCourier(uid);
     if (deliveryDay.compareTo(currentDay) == 0) {
       // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
       processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
@@ -134,6 +137,32 @@ public class NewRequestServlet extends HttpServlet {
     .setDatabaseUrl("https://com-alphabooks-step-2020.firebaseio.com")
     .build();
     return FirebaseApp.initializeApp(options);
+  }
+
+  /** 
+   * If this is the first time the user makes a delivery request, he will be marked in
+   * the data store as a courier to be able to view "See journeys" page.  
+   */
+
+  private void markUserAsCourier(String uid) {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Entity userEntity;
+    Query query =
+        new Query("UserData")
+            .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, uid));
+    PreparedQuery results = datastore.prepare(query);
+    userEntity = results.asSingleEntity();
+    if (userEntity != null && userEntity.getProperty("isCourier").equals("true")) {
+      // This is not the first request, so user is already marked as courier.
+      return;
+    }
+    if (userEntity == null) {
+      // User does not exist in the database.
+      userEntity = new Entity("UserData");
+      userEntity.setProperty("uid", uid);
+    }
+    userEntity.setProperty("isCourier", "true");
+    datastore.put(userEntity);
   }
 
   /**

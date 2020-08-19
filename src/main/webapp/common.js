@@ -52,7 +52,7 @@ function setTimezoneOffsetFromDate(dateId) {
 function parseQueryString(queryString) {
   // Remove first character if it is ? or #.
   if (queryString.length &&
-      (queryString.charAt(0) == '#' || queryString.charAt(0) == '?')) {
+    (queryString.charAt(0) == '#' || queryString.charAt(0) == '?')) {
     queryString = queryString.substring(1);
   }
   var config = {};
@@ -64,6 +64,18 @@ function parseQueryString(queryString) {
     }
   }
   return config;
+}
+
+/**
+ * Method that displays in the address box the old address, so it would be easier for
+ * users to edit it.
+ */
+
+function displayCurrentAddress() {
+  const addressBox = document.getElementById('address');
+  fetch('/user-data').then(response => response.json()).then((userInfo) => {
+    addressBox.value = userInfo.address;
+  });
 }
 
 /**
@@ -92,7 +104,15 @@ function addMenu() {
   delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
-  see_journeys.innerText = 'See journeys';
-  see_journeys.href = 'journeys.html';
-  menuElement.append(see_journeys);
+  let displayJourneys;
+  fetch('/user-data').then(response => response.json()).then((userInfo) => {
+    console.log(userInfo);
+    displayJourneys = userInfo.isCourier;
+  });
+  // Only display this page for users that are set in the database as couriers.
+  if (displayJourneys) {
+    see_journeys.innerText = 'See journeys';
+    see_journeys.href = 'journeys.html';
+    menuElement.append(see_journeys);
+  }
 }
