@@ -53,14 +53,25 @@ public class NewRequestServlet extends HttpServlet {
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
       return ;
     }
-    // TODO[ak47na]: update startTime and endTime with respect to user timezone and check that the
-    // time is not in the past
+
+    // get the timezone offset from the current request in seconds
+    int timezoneOffset = parseNumber(request.getParameter("timezone-offset")) * 60;
+    
     LocalTime startTime = parseTime(request.getParameter("start-time"));
     LocalTime endTime = parseTime(request.getParameter("end-time"));    
 
     if (startTime == null || endTime == null || startTime.compareTo(endTime) > 0) {
       // Send a HTTP 400 Bad Request response if user provided an invalid time.
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid time!");
+      return ;
+    }
+    // convert startTime and endTime to seconds and add the timezoneOffset 
+    int startTimeSeconds = getNumberOfSeconds(startTime) + timezoneOffset;
+    int endTimeSeconds = getNumberOfSeconds(endTime) + timezoneOffset;
+
+    if (deliveryDay.getTime() + (getNumberOfSeconds(startTime) + timezoneOffset) * 1000 < currentDay.getTime()) {
+      // Send a HTTP 400 Bad Request response if user provided a time in the past.
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a time in the future!");
       return ;
     }
     
@@ -71,8 +82,8 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
     
-    // initialize firebase app with Google Application Defalut Credentials
-    FirebaseApp defaultApp = initializeFirebaseApp(/* setOptions */ false);
+    // initialize firebase app 
+    FirebaseApp defaultApp = initializeFirebaseApp();
     //check the name of defaultApp to make sure that the correct app is connected
     System.out.println(defaultApp.getName());
 
@@ -90,19 +101,34 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
 
+    if (deliveryDay.compareTo(currentDay) == 0) {
+      // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
+      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
+    } else {
+    // the delivery request is added to datastore and processed the day before deliveryDay
+    // delayed processing optimizes the order matching algorithm by taking into account other
+    // or future delivery requests and couriers
     DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-      deliveryDay, startTime, endTime, maxStops, uid
+      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
     ));
+    }
+  }
+
+  /** 
+   * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
+   * delivery journey for the orders and adds it to user's journeys.
+   */
+  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
+    // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
+    // the stops the courier must make; the Waypoint objects provide information such as the books 
+    // that should be taken/delivered
+    //addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
   }
 
   /**
    * Initialize firebase SDK and return the FirebaseApp object
    */
-  private FirebaseApp initializeFirebaseApp(boolean setOptions) {
-    if (!setOptions) {
-      // initialize FirebaseApp with default options for testing purposes
-      return FirebaseApp.initializeApp();
-    }
+  private FirebaseApp initializeFirebaseApp() {
     FirebaseOptions options = new FirebaseOptions.Builder()
     //.setCredentials(GoogleCredentials.getApplicationDefault()) 
     .setDatabaseUrl("https://com-alphabooks-step-2020.firebaseio.com")
@@ -113,12 +139,12 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * create a deliveryRequest Entity and store it in the datastore.
    */
-  private Entity createDeliveryRequestEntity(Date deliveryDay, LocalTime startTime, LocalTime endTime, int maxStops, String userId) {
+  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
     Entity deliveryRequest = new Entity("deliveryRequest");
     
     deliveryRequest.setProperty("deliveryDay", deliveryDay);
-    deliveryRequest.setProperty("startTime", getNumberOfSeconds(startTime));
-    deliveryRequest.setProperty("endTime", getNumberOfSeconds(endTime));
+    deliveryRequest.setProperty("startTime", startTime);
+    deliveryRequest.setProperty("endTime", endTime);
     deliveryRequest.setProperty("userId", userId);
    
     return deliveryRequest;

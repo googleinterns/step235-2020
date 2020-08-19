@@ -29,6 +29,21 @@ function setIdToken() {
     console.log("Error");
   }
 }
+
+/**
+ * Set the value of timezone-offset element from the dateId element
+ */
+function setTimezoneOffsetFromDate(dateId) {
+  date = document.getElementById(dateId);
+  if (date) {
+    // update timezone-offset from the date of dateId 
+    timezone = new Date(date.value).getTimezoneOffset();
+    document.getElementById('timezone-offset').value = timezone;
+  } else {
+    //TODO[ak47na]: handle error when dateId input element is not loaded
+    alert("Please select a date!");
+  }
+}
  
 /**
  * @param {string} queryString The full query string.
