@@ -19,10 +19,18 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
-
 import com.google.firebase.auth.*;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.maps.errors.ApiException;
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeoApiContext.Builder;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
+import com.google.maps.model.LatLng;
+import com.google.sps.data.Point;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
@@ -115,6 +123,7 @@ public class NewRequestServlet extends HttpServlet {
       deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
     ));
     }
+
   }
 
   /** 
