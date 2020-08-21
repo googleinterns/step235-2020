@@ -15,6 +15,7 @@
 /**
  * Common methods for both the app page.
  */
+var APIKey = "AIzaSyBQJxV5ttrDZxRNxyYwgdPlHDW4C9ys2oI";
 
 /**
  * Set the idToken input value so that it can be sent to the server
@@ -75,6 +76,30 @@ function displayCurrentAddress() {
   const addressBox = document.getElementById('address');
   fetch('/user-data').then(response => response.json()).then((userInfo) => {
     addressBox.value = userInfo.address;
+  });
+}
+
+function updateAddressFromGeolocation(checkboxId) {
+  addressBox = document.getElementById("start-address");
+  if (document.getElementById(checkboxId).checked == false) {
+    // the user will have to set the address himself so clear the address box
+    addressBox.value = ""; 
+  } else {
+    // update the address box to show the address found using Geolocation
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(setAddress);
+    } else {
+      addressBox.value = ""; 
+      alert("Geolocation is not supported by this browser!");
+    }
+  }
+}
+
+function setAddress(position) {
+  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${APIKey}`;
+  fetch(geocodingUrl).then(response => response.json()).then((result) => {
+    // return the best address found using position latitude and longitude
+    document.getElementById('start-address').value = result.results[0].formatted_address;
   });
 }
 
