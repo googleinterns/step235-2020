@@ -31,7 +31,9 @@ import com.google.maps.GeocodingApi;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
 import com.google.sps.data.Point;
+import com.google.sps.data.MapsRequest;
 import java.io.IOException;
+import java.lang.Double;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -65,7 +67,7 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     // get the timezone offset from the current request in seconds
-    int timezoneOffset = parseNumber(request.getParameter("timezone-offset")) * 60;
+    Integer timezoneOffset = parseInteger(request.getParameter("timezone-offset")) * 60;
     
     LocalTime startTime = parseTime(request.getParameter("start-time"));
     LocalTime endTime = parseTime(request.getParameter("end-time"));    
@@ -85,13 +87,28 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
     
-    int maxStops = parseNumber(request.getParameter("max-stops"));
-    if (maxStops <= 0 || maxStops > 25) {
+    Integer maxStops = parseInteger(request.getParameter("max-stops"));
+    if (maxStops == null || maxStops <= 0 || maxStops > 25) {
       // Send a HTTP 400 Bad Request response if user provided an invalid number of stops.
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter between 1 and 25 stops!");
       return ;
     }
-    
+
+    Double lat = parseDouble(request.getParameter("latitude"));
+    Double lng = parseDouble(request.getParameter("longitude"));
+    if (lat == null || lng == null) {
+      // the user has set the address himself
+      LatLng point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
+      if (point == null) {
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid address!");
+        return ;
+      }
+      lat = point.lat;
+      lng = point.lng;
+    }
+    System.out.println(lat);
+    System.out.println(lng);
+
     // initialize firebase app 
     FirebaseApp defaultApp = initializeFirebaseApp();
     //check the name of defaultApp to make sure that the correct app is connected
@@ -112,15 +129,16 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     markUserAsCourier(uid);
+    
     if (deliveryDay.compareTo(currentDay) == 0) {
       // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
-      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
+      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid, lat, lng);
     } else {
     // the delivery request is added to datastore and processed the day before deliveryDay
     // delayed processing optimizes the order matching algorithm by taking into account other
     // or future delivery requests and couriers
     DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
+      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid, lat, lng
     ));
     }
 
@@ -130,7 +148,7 @@ public class NewRequestServlet extends HttpServlet {
    * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
    * delivery journey for the orders and adds it to user's journeys.
    */
-  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
+  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId, Double startLat, Double startLng) {
     // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
     // the stops the courier must make; the Waypoint objects provide information such as the books 
     // that should be taken/delivered
@@ -177,13 +195,15 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * create a deliveryRequest Entity and store it in the datastore.
    */
-  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
+  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId, Double startLat, Double startLng) {
     Entity deliveryRequest = new Entity("deliveryRequest");
     
     deliveryRequest.setProperty("deliveryDay", deliveryDay);
     deliveryRequest.setProperty("startTime", startTime);
     deliveryRequest.setProperty("endTime", endTime);
     deliveryRequest.setProperty("userId", userId);
+    deliveryRequest.setProperty("startLat", startLat);
+    deliveryRequest.setProperty("startLng", startLng);
    
     return deliveryRequest;
   }
@@ -210,12 +230,25 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * Returns the integer value of numberString
    */
-  private int parseNumber(String numberString) {
+  private Integer parseInteger(String numberString) {
     Integer number = null;
     try {
       number = Integer.parseInt(numberString);
-    } catch (NumberFormatException e) {
-      return -1;
+    } catch (Exception e) {
+      return null;
+    }
+    return number;
+  }
+
+  /**
+   * Returns the Double value of numberString
+   */
+  private Double parseDouble(String numberString) {
+    Double number = null;
+    try {
+      number = Double.parseDouble(numberString);
+    } catch (Exception e) {
+      return null;
     }
     return number;
   }
