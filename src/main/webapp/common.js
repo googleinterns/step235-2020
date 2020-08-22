@@ -130,7 +130,6 @@ function geolocationError(error) {
  * Sets latitude and longitude elements to user's coordinates using Geolocation API 
  */
 function setLatLng(position) {
-console.log("Caff");
   document.getElementById('latitude').value = position.coords.latitude;
   document.getElementById('longitude').value = position.coords.longitude;
 }
@@ -141,11 +140,9 @@ console.log("Caff");
 function getAddressFromLatLng(addressId) {
   addressBox = document.getElementById(addressId);
   geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById("latitude").value},${document.getElementById("longitude").value}&key=${APIKey}`;
-  console.log(geocodingUrl);
   fetch(geocodingUrl).then(response => response.json()).then((result) => {
     // return the best address found 
     addressBox.value = result.results[0].formatted_address;
-    console.log(addressBox.value);
   });
 }
 
