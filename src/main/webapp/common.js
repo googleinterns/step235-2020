@@ -15,7 +15,7 @@
 /**
  * Common methods for both the app page.
  */
-var APIKey = "AIzaSyBQJxV5ttrDZxRNxyYwgdPlHDW4C9ys2oI";
+var APIKey = "";
 
 /**
  * Set the idToken input value so that it can be sent to the server
