@@ -30,8 +30,10 @@ import com.google.maps.GeoApiContext.Builder;
 import com.google.maps.GeocodingApi;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
-import com.google.sps.data.Point;
+import com.google.sps.data.Journey;
 import com.google.sps.data.MapsRequest;
+import com.google.sps.data.MatchingSystem;
+import com.google.sps.data.Point;
 import java.io.IOException;
 import java.lang.Double;
 import java.nio.charset.StandardCharsets;
@@ -46,6 +48,7 @@ import java.time.format.DateTimeParseException;
 import java.time.LocalTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date; 
 
 @WebServlet("/new-delivery-request")
@@ -142,15 +145,29 @@ public class NewRequestServlet extends HttpServlet {
 
   }
 
-  /** 
-   * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
+  /**
+   * Finds a set of orders that can be solved by the current delivery request, creates an optimal
    * delivery journey for the orders and adds it to user's journeys.
    */
-  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId, Double startLat, Double startLng) {
-    // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
-    // the stops the courier must make; the Waypoint objects provide information such as the books 
-    // that should be taken/delivered
-    // addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
+  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops,
+                                      String userId, double startLat, double startLng) {
+    // findOptimalDeliveryJourneyForRequest returns a Journey object with waypoints instance variables
+    // representing the stops the courier must make
+    Journey journey = MatchingSystem.findOptimalDeliveryJourneyForRequest(
+        deliveryDay, startTime, endTime, maxStops, userId, startLat, startLng);
+    addDeliveryJourney(journey);
+  }
+
+  /**
+   * The function prints the waypoint object of the journey in reverse order that they must be
+   * visited.
+   * TODO[ak47na]: display the journey on SeeJourney page
+   */
+  private void addDeliveryJourney(Journey journey) {
+    ArrayList<Point> waypoints = journey.getOrderedWaypoints();
+    for (Point waypoint : waypoints) {
+      System.out.println(waypoint.toString());
+    }
   }
 
   /**
