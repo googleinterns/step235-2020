@@ -24,13 +24,18 @@ public class Point {
   public double longitude;
   public Point(String address) {
     LatLng point = MapsRequest.getLocationFromAddress(address);
-    if (point == null) {
-      // set invalid values if request to GeocodingAPI failed
-      latitude = -91;
-      longitude = -91;
-    } else {
-      latitude = point.lat;
-      longitude = point.lng;
-    }
+    this.latitude = point.lat;
+    this.longitude = point.lng;
+  }
+  public Point(double latitude, double longitude) {
+    this.latitude = latitude;
+    this.longitude = longitude;
+  }
+
+  /**
+   * Returns the area of the point from its latitude and longitude.
+   */
+  public int getArea() {
+    return 1;
   }
 }

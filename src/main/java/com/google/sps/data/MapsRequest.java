@@ -14,22 +14,19 @@
 package com.google.sps.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.maps.DirectionsApi;
 import com.google.maps.errors.ApiException;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeoApiContext.Builder;
 import com.google.maps.GeocodingApi;
-import com.google.maps.model.GeocodingResult;
-import com.google.maps.model.LatLng;
+import com.google.maps.model.*;
+import java.io.IOException;
 
-/** 
+/**
  * Class that create a GeoApiContext variable and handles requests to maps API.
  */
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
-
-  /** 
-   * Returns the geoApiContext or creates one if it wasn't already created.
-   */
   public static GeoApiContext getGeoApiContext() {
     if (geoApiContext == null) {
       geoApiContext = new GeoApiContext
@@ -50,7 +47,32 @@ public class MapsRequest {
       Gson gson = new GsonBuilder().setPrettyPrinting().create();
       return results[0].geometry.location;
     } catch(Exception e) {
+      System.out.println(e.getMessage());
       return null;
+    }
+  }
+
+  /**
+   * Makes a request to Geocoding API and returns the duration in seconds to get from point A to point B
+   * TODO[ak47na]: update function to get the duration if the journey starts at a given time.
+   */
+  static int getTimeBetween2Points(Point A, Point B) {
+    try {
+      DirectionsResult result =
+          DirectionsApi.newRequest(getGeoApiContext())
+              .origin(new LatLng(A.latitude, A.longitude))
+              .destination(new LatLng(B.latitude, B.longitude))
+              .mode(TravelMode.DRIVING)
+              .await();
+      int timeInSeconds = 0;
+      for (DirectionsLeg leg : result.routes[0].legs) {
+        timeInSeconds += leg.duration.inSeconds;
+      }
+      return timeInSeconds;
+
+    } catch (Exception e) {
+      // TODO[ak47na]: improve exception handling
+      return -1;
     }
   }
 }
