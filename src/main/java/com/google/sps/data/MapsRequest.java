@@ -21,8 +21,15 @@ import com.google.maps.GeocodingApi;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
 
+/** 
+ * Class that create a GeoApiContext variable and handles requests to maps API.
+ */
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
+
+  /** 
+   * Returns the geoApiContext or creates one if it wasn't already created.
+   */
   public static GeoApiContext getGeoApiContext() {
     if (geoApiContext == null) {
       geoApiContext = new GeoApiContext
@@ -32,6 +39,11 @@ public class MapsRequest {
     }
     return geoApiContext;
   }
+
+  /**
+   * Makes a request to Geocoding API and returns the latitude and longitude associated with the
+   * address String.
+   */
   public static LatLng getLocationFromAddress(String address) {
     try {
       GeocodingResult[] results =  GeocodingApi.geocode(getGeoApiContext(), address).await();
