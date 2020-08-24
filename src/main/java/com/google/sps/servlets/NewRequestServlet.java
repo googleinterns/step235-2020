@@ -106,8 +106,6 @@ public class NewRequestServlet extends HttpServlet {
       lat = point.lat;
       lng = point.lng;
     }
-    System.out.println(lat);
-    System.out.println(lng);
 
     // initialize firebase app 
     FirebaseApp defaultApp = initializeFirebaseApp();

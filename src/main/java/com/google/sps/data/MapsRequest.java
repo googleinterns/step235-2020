@@ -50,7 +50,6 @@ public class MapsRequest {
       Gson gson = new GsonBuilder().setPrettyPrinting().create();
       return results[0].geometry.location;
     } catch(Exception e) {
-      System.out.println(e.getMessage());
       return null;
     }
   }
