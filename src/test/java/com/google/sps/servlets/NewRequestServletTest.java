@@ -68,7 +68,7 @@ public final class NewRequestServletTest {
     when(request.getParameter("start-time")).thenReturn("05:5");
     when(request.getParameter("end-time")).thenReturn("05:10");
     when(request.getParameter("max-stops")).thenReturn("1");
-    when(request.getParameter("timezone-offset")).thenReturn("180");
+    when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
     requestServlet.doPost(request, response);
@@ -86,7 +86,7 @@ public final class NewRequestServletTest {
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("05:10");
     when(request.getParameter("max-stops")).thenReturn("1");
-    when(request.getParameter("timezone-offset")).thenReturn("180");
+    when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
     requestServlet.doPost(request, response);
@@ -104,7 +104,7 @@ public final class NewRequestServletTest {
 //     when(request.getParameter("start-time")).thenReturn("05:15");
 //     when(request.getParameter("end-time")).thenReturn("15:10");
 //     when(request.getParameter("max-stops")).thenReturn("1");
-//     when(request.getParameter("timezone-offset")).thenReturn("180");
+//     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
 //     NewRequestServlet requestServlet = new NewRequestServlet();
 //     requestServlet.doPost(request, response);

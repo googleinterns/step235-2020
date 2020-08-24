@@ -14,7 +14,10 @@
 package com.google.sps.data;
 
 import com.google.maps.model.LatLng;
+import com.google.maps.errors.ApiException;
 import com.google.sps.data.MapsRequest;
+import java.io.IOException;
+import java.lang.InterruptedException;
 
 /**
  * Class that represents points on the map using latitude and longitude coordinates.
@@ -22,7 +25,7 @@ import com.google.sps.data.MapsRequest;
 public class Point {
   public double latitude;
   public double longitude;
-  public Point(String address) {
+  public Point(String address) throws IOException, ApiException, InterruptedException {
     LatLng point = MapsRequest.getLocationFromAddress(address);
     if (point == null) {
       // set invalid values if request to GeocodingAPI failed

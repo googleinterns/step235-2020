@@ -67,7 +67,7 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     // get the timezone offset from the current request in seconds
-    Integer timezoneOffset = parseInteger(request.getParameter("timezone-offset")) * 60;
+    Integer timezoneOffset = parseInteger(request.getParameter("timezone-offset-minutes")) * 60;
     
     LocalTime startTime = parseTime(request.getParameter("start-time"));
     LocalTime endTime = parseTime(request.getParameter("end-time"));    
@@ -98,9 +98,12 @@ public class NewRequestServlet extends HttpServlet {
     Double lng = parseDouble(request.getParameter("longitude"));
     if (lat == null || lng == null) {
       // the user has set the address himself
-      LatLng point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
-      if (point == null) {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid address!");
+      LatLng point = null;
+      try {
+        point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
+      } catch (Exception e) {
+        // Exception can be ApiException, IOException, InterruptedException
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
         return ;
       }
       lat = point.lat;

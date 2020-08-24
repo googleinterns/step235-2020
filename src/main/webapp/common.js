@@ -15,7 +15,7 @@
 /**
  * Common methods for both the app page.
  */
-var APIKey = "";
+var GoogleMapsApiKey= "";
 
 /**
  * Set the idToken input value so that it can be sent to the server
@@ -139,10 +139,16 @@ function setLatLng(position) {
  */
 function getAddressFromLatLng(addressId) {
   addressBox = document.getElementById(addressId);
-  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById("latitude").value},${document.getElementById("longitude").value}&key=${APIKey}`;
+  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById("latitude").value},${document.getElementById("longitude").value}&key=${GoogleMapsApiKey}`;
   fetch(geocodingUrl).then(response => response.json()).then((result) => {
-    // return the best address found 
-    addressBox.value = result.results[0].formatted_address;
+    
+    if (result.status != "OK") {
+      // there was an error when getting the address from the coordinates
+      alert("Location information is unavailable!");
+    } else {
+      // return the best address found 
+      addressBox.value = result.results[0].formatted_address;
+    }
   });
 }
 

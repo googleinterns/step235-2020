@@ -20,6 +20,8 @@ import com.google.maps.GeoApiContext.Builder;
 import com.google.maps.GeocodingApi;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
+import java.io.IOException;
+import java.lang.InterruptedException;
 
 /** 
  * Class that create a GeoApiContext variable and handles requests to maps API.
@@ -44,13 +46,9 @@ public class MapsRequest {
    * Makes a request to Geocoding API and returns the latitude and longitude associated with the
    * address String.
    */
-  public static LatLng getLocationFromAddress(String address) {
-    try {
-      GeocodingResult[] results =  GeocodingApi.geocode(getGeoApiContext(), address).await();
-      Gson gson = new GsonBuilder().setPrettyPrinting().create();
-      return results[0].geometry.location;
-    } catch(Exception e) {
-      return null;
-    }
+  public static LatLng getLocationFromAddress(String address) throws IOException, ApiException, InterruptedException {
+    GeocodingResult[] results =  GeocodingApi.geocode(getGeoApiContext(), address).await();
+    Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    return results[0].geometry.location;
   }
 }
