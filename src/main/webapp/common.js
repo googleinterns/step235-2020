@@ -152,6 +152,16 @@ function getAddressFromLatLng(addressId) {
   });
 }
 
+/** 
+ * Returns the deliverySlot object if the user made a valid delivery request or null otherwise.
+ * The function is used for testing.
+ */
+ function getDeliverySlot() {
+   fetch('/new-delivery-request').then(response => response.json()).then(deliverySlot => {
+    console.log(deliverySlot);
+  });
+ }
+
 /**
  * Method that builds for every page with a "menu-container div" a navigable menu.
  */
