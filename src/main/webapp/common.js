@@ -32,14 +32,14 @@ function setIdToken() {
 }
 
 /**
- * Set the value of timezone-offset element from the dateId element
+ * Set the value of timezone-offset-minutes element from the dateId element
  */
 function setTimezoneOffsetFromDate(dateId) {
   date = document.getElementById(dateId);
   if (date) {
-    // update timezone-offset from the date of dateId 
+    // update timezone-offset-minutes from the date of dateId 
     timezone = new Date(date.value).getTimezoneOffset();
-    document.getElementById('timezone-offset').value = timezone;
+    document.getElementById('timezone-offset-minutes').value = timezone;
   } else {
     //TODO[ak47na]: handle error when dateId input element is not loaded
     alert("Please select a date!");
