@@ -38,6 +38,10 @@ public class Journey {
     start = startPoint;
   }
 
+  /** 
+   * Returns the waypoints of the journey as an ArrayList so that they can be accessed by their 
+   * value in the waypoints hashmap, which is the index in the ArrayList.
+   */
   private ArrayList<Point> getWaypointsList() {
     ArrayList<Point> waypointsList = new ArrayList<>();
     waypointsList.addAll(Collections.nCopies(numberOfWaypoints, start));
@@ -45,17 +49,6 @@ public class Journey {
       waypointsList.set(entry.getValue(), entry.getKey());
     }
     return waypointsList;
-  }
-
-  private void printMatrix(ArrayList<ArrayList<Pair>> bestTime) {
-    int allWaypointsConfig = (1 << numberOfWaypoints) - 1;
-    for (int config = 0; config <= allWaypointsConfig; ++ config) {
-      for (int i = 0; i < numberOfWaypoints; ++ i) {
-        System.out.print(bestTime.get(config).get(i).first);
-        System.out.print("*");
-      }
-      System.out.println();
-    }
   }
 
   /**
