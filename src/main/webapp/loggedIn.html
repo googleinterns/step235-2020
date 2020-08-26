@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml">
   <head>
     <meta charset="UTF-8">
     <title>AlphaBooks Library</title>
@@ -12,10 +12,22 @@
     <script src="common.js"></script>
     <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
     <script src="app.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://www.google.com/books/jsapi.js"></script>
   </head>
   <body onload="addMenu()">
 
     <div class="menu-container"></div>
+
+    <form id="search-bar">
+      <label for="title">Search by title:</label>
+      <input type="text" id="title" name="title" size="36">
+      <label for="author">Search by author:</label>
+      <input type="text" id="author" name="author" size="36">
+      <label for="isbn">Search by ISBN:</label>
+      <input type="text" id="isbn" name="isbn" size="36">
+      <input type="button" id="search-button" value="Search!">
+    </form>
 
     <div class="widget-container">
       <div id="loading">Loading...</div>
@@ -43,7 +55,12 @@
 
     <div class="content-container">
       <h1>Welcome To AlphaBooks Library!</h1>
+      <div id="wrapper">
+        <div id="book-grid"></div>
+      </div>
     </div>
+
+    <script src="bookScript.js"></script>
 
   </body>
 <html>
