@@ -34,8 +34,8 @@ import static org.mockito.Mockito.when;
 
 /**
  * Tests the behaviour of a Journey object.
- * TODO[ak47na]: Implement brute-force algorithm that iterates over all permutations of waypoints
- * and finds the optimal one.
+ * TODO[ak47na]: To check the answers for bigger tests, implement brute algorithm that iterates over
+ * over all permutations of waypoints and finds the optimal one
  */
 @RunWith(JUnit4.class)
 public class JourneyTest {
@@ -59,11 +59,13 @@ public class JourneyTest {
       restrictions.add(new Pair(0, i));
     }
     journey.setRestrictions(restrictions);
-    // mock the time for each pair of points
+   
     for (Point A : points) {
       when(A.getTimeToArriveAtPoint(start)).thenReturn(manhattanDistance(A, start));
       when(start.getTimeToArriveAtPoint(A)).thenReturn(manhattanDistance(start, A));
       for (Point B: points) {
+        // to get time in second needed to arrive from A to B, use manhattanDistance instead of 
+        // requesting the duration from Directions API
         when(A.getTimeToArriveAtPoint(B)).thenReturn(manhattanDistance(A, B));
       }
     }
@@ -88,11 +90,13 @@ public class JourneyTest {
       restrictions.add(new Pair(i, 0));
     }
     journey.setRestrictions(restrictions);
-    // mock the time for each pair of points
+
     for (Point A : points) {
       when(A.getTimeToArriveAtPoint(start)).thenReturn(manhattanDistance(A, start));
       when(start.getTimeToArriveAtPoint(A)).thenReturn(manhattanDistance(start, A));
       for (Point B: points) {
+        // to get time in second needed to arrive from A to B, use manhattanDistance instead of 
+        // requesting the duration from Directions API
         when(A.getTimeToArriveAtPoint(B)).thenReturn(manhattanDistance(A, B));
       }
     }
@@ -122,11 +126,13 @@ public class JourneyTest {
       restrictions.add(new Pair(0, i));
     }
     journey.setRestrictions(restrictions);
-    // mock the time for each pair of points
+    
     for (Point A : points) {
       when(A.getTimeToArriveAtPoint(start)).thenReturn(manhattanDistance(A, start));
       when(start.getTimeToArriveAtPoint(A)).thenReturn(manhattanDistance(start, A));
       for (Point B: points) {
+        // to get time in second needed to arrive from A to B, use manhattanDistance instead of 
+        // requesting the duration from Directions API
         when(A.getTimeToArriveAtPoint(B)).thenReturn(manhattanDistance(A, B));
       }
     }

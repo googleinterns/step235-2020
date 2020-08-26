@@ -126,7 +126,7 @@ public class Journey {
   public ArrayList<ArrayList<Pair>> initializeBestTimeMatrix() {
     ArrayList<ArrayList<Pair>> bestTime = new ArrayList<>();
     for (int config = 0; config <= (1 << numberOfWaypoints); ++config) {
-      // add the config-th line to the matrix with numberOfWaypoints columns of zeros
+      // add the config-th line to the matrix with numberOfWaypoints columns of Integer.MAX_VALUE
       ArrayList<Pair> currentRow = new ArrayList<Pair>();
 
       for (int waypointIndex = 0; waypointIndex <= numberOfWaypoints; ++ waypointIndex) {
