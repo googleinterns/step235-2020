@@ -19,11 +19,25 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
-
+import com.google.auth.oauth2.GoogleCredentials;
 import com.google.firebase.auth.*;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.FirebaseOptions;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.maps.errors.ApiException;
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeoApiContext.Builder;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
+import com.google.maps.model.LatLng;
+import com.google.sps.data.DeliverySlot;
+import com.google.sps.data.Journey;
+import com.google.sps.data.MapsRequest;
+import com.google.sps.data.Point;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.Double;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -31,21 +45,22 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
-import java.time.format.DateTimeFormatter; 
-import java.time.format.DateTimeParseException; 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.LocalTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date; 
+import java.util.ArrayList;
+import java.util.Date;
 
 @WebServlet("/new-delivery-request")
 public class NewRequestServlet extends HttpServlet {
   /**
-   * The function handles POST requests sent by delivery-form in deliveryRequest.html 
+   * The function handles POST requests sent by delivery-form in deliveryRequest.html
    */
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    
+
     Date deliveryDay = parseDate(request.getParameter("delivery-date"));
 
     // get the currentDate to check that deliveryDay is not set for a past date
@@ -57,7 +72,7 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     // get the timezone offset from the current request in seconds
-    int timezoneOffset = parseNumber(request.getParameter("timezone-offset")) * 60;
+    Integer timezoneOffset = parseInteger(request.getParameter("timezone-offset-minutes")) * 60;
     
     LocalTime startTime = parseTime(request.getParameter("start-time"));
     LocalTime endTime = parseTime(request.getParameter("end-time"));    
@@ -77,14 +92,39 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
     
-    int maxStops = parseNumber(request.getParameter("max-stops"));
-    if (maxStops <= 0 || maxStops > 25) {
+    Integer maxStops = parseInteger(request.getParameter("max-stops"));
+    if (maxStops == null || maxStops <= 0 || maxStops > 25) {
       // Send a HTTP 400 Bad Request response if user provided an invalid number of stops.
       response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter between 1 and 25 stops!");
       return ;
     }
-    
-    // initialize firebase app 
+
+    Double lat = parseDouble(request.getParameter("latitude"));
+    Double lng = parseDouble(request.getParameter("longitude"));
+    if (lat == null || lng == null) {
+      // the user has set the address himself
+      LatLng point = null;
+      try {
+        point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
+      } catch (ApiException e) {
+        // request to Geocoding API failed
+        response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, e.getMessage());
+        return ;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException(e);
+      }
+      if (point == null) {
+        // Geocoding API didn't find the coordinates corresponding to given address
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid address!");
+      }
+      lat = point.lat;
+      lng = point.lng;
+    }
+
+    DeliverySlot deliverySlot = new DeliverySlot(deliveryDay, startTimeSeconds, endTimeSeconds);
+
+    // initialize firebase app
     FirebaseApp defaultApp = initializeFirebaseApp();
     //check the name of defaultApp to make sure that the correct app is connected
     System.out.println(defaultApp.getName());
@@ -104,44 +144,65 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     markUserAsCourier(uid);
+
     if (deliveryDay.compareTo(currentDay) == 0) {
       // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
-      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
+      processDeliveryRequest(deliverySlot, maxStops, uid, lat, lng);
     } else {
     // the delivery request is added to datastore and processed the day before deliveryDay
     // delayed processing optimizes the order matching algorithm by taking into account other
     // or future delivery requests and couriers
-    DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
-    ));
+      DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
+        deliverySlot, maxStops, uid, lat, lng
+      ));
     }
   }
 
-  /** 
-   * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
+  /**
+   * Finds a set of orders that can be solved by the current delivery request, creates an optimal
    * delivery journey for the orders and adds it to user's journeys.
    */
-  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
-    // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
-    // the stops the courier must make; the Waypoint objects provide information such as the books 
-    // that should be taken/delivered
-    // addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
+  private void processDeliveryRequest(DeliverySlot deliverySlot, int maxStops,
+                                      String userId, double startLat, double startLng) {
+    // findOptimalDeliveryJourneyForRequest returns a Journey object with waypoints instance variables
+    // representing the stops the courier must make
+    
+    // TODO[ak47na]: uncomment the lines in the next PR which matches orders to delivery requests
+    // Journey journey = MatchingSystem.findOptimalDeliveryJourneyForRequest(
+    //    deliveryDay, startTime, endTime, maxStops, userId, startLat, startLng);
+    // addDeliveryJourney(journey);
+  }
+
+  /**
+   * The function prints the waypoint object of the journey in reverse order that they must be
+   * visited.
+   * TODO[ak47na]: display the journey on SeeJourney page
+   */
+  private void addDeliveryJourney(Journey journey) {
+    ArrayList<Point> waypoints = journey.getOrderedWaypoints();
+    for (Point waypoint : waypoints) {
+      System.out.println(waypoint.toString());
+    }
   }
 
   /**
    * Initialize firebase SDK and return the FirebaseApp object
    */
-  private FirebaseApp initializeFirebaseApp() {
+  private FirebaseApp initializeFirebaseApp() throws IOException {
+    FileInputStream serviceAccount =
+        new FileInputStream("/firebaseKey.json");
+
     FirebaseOptions options = new FirebaseOptions.Builder()
-    //.setCredentials(GoogleCredentials.getApplicationDefault()) 
-    .setDatabaseUrl("https://com-alphabooks-step-2020.firebaseio.com")
-    .build();
+        .setCredentials(GoogleCredentials.fromStream(serviceAccount))
+        .setDatabaseUrl("https://alphabooks-step-2020.firebaseio.com")
+        .build();
+
     return FirebaseApp.initializeApp(options);
   }
 
-  /** 
+  /**
    * If this is the first time the user makes a delivery request, he will be marked in
-   * the data store as a courier to be able to view "See journeys" page.  
+   * the data store as a courier to be able to view "See journeys" page.
    */
 
   private void markUserAsCourier(String uid) {
@@ -168,19 +229,21 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * create a deliveryRequest Entity and store it in the datastore.
    */
-  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
+  private Entity createDeliveryRequestEntity(DeliverySlot deliverySlot, int maxStops, String userId, Double startLat, Double startLng) {
     Entity deliveryRequest = new Entity("deliveryRequest");
     
-    deliveryRequest.setProperty("deliveryDay", deliveryDay);
-    deliveryRequest.setProperty("startTime", startTime);
-    deliveryRequest.setProperty("endTime", endTime);
+    deliveryRequest.setProperty("deliveryDay", deliverySlot.getDeliveryDay());
+    deliveryRequest.setProperty("startTime", deliverySlot.getStartTime());
+    deliveryRequest.setProperty("endTime", deliverySlot.getEndTime());
     deliveryRequest.setProperty("userId", userId);
+    deliveryRequest.setProperty("startLat", startLat);
+    deliveryRequest.setProperty("startLng", startLng);
    
     return deliveryRequest;
   }
 
   private int getNumberOfSeconds(LocalTime time) {
-    return time.getHour() * 3600 + time.getMinute() * 60; 
+    return time.getHour() * 3600 + time.getMinute() * 60;
   }
 
   /**
@@ -201,12 +264,25 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * Returns the integer value of numberString
    */
-  private int parseNumber(String numberString) {
+  private Integer parseInteger(String numberString) {
     Integer number = null;
     try {
       number = Integer.parseInt(numberString);
-    } catch (NumberFormatException e) {
-      return -1;
+    } catch (Exception e) {
+      return null;
+    }
+    return number;
+  }
+
+  /**
+   * Returns the Double value of numberString
+   */
+  private Double parseDouble(String numberString) {
+    Double number = null;
+    try {
+      number = Double.parseDouble(numberString);
+    } catch (Exception e) {
+      return null;
     }
     return number;
   }
