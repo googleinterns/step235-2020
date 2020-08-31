@@ -14,25 +14,21 @@
 package com.google.sps.data;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.maps.DirectionsApi;
 import com.google.maps.errors.ApiException;
 import com.google.maps.GeoApiContext;
 import com.google.maps.GeoApiContext.Builder;
 import com.google.maps.GeocodingApi;
-import com.google.maps.model.GeocodingResult;
-import com.google.maps.model.LatLng;
+import com.google.maps.model.*;
 import java.io.IOException;
-import java.lang.InterruptedException;
 
-/** 
+/**
  * Class that create a GeoApiContext variable and handles requests to maps API.
  */
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
-
-  /** 
-   * Returns the geoApiContext or creates one if it wasn't already created.
-   */
   public static GeoApiContext getGeoApiContext() {
+    // TODO[ak47na]: get the apiKey from JSON file.
     if (geoApiContext == null) {
       geoApiContext = new GeoApiContext
           .Builder()
@@ -48,6 +44,7 @@ public class MapsRequest {
    */
   public static LatLng getLocationFromAddress(String address) throws IOException, ApiException, InterruptedException {
     GeocodingResult[] results =  GeocodingApi.geocode(getGeoApiContext(), address).await();
+    // TODO[ak47na]: throw Exception when results == null or results.size() == 0
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
     return results[0].geometry.location;
   }

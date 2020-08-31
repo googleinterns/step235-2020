@@ -101,17 +101,17 @@ public class NewRequestServlet extends HttpServlet {
       // the user has set the address himself
       LatLng point = null;
       try {
-        point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
+        point = MapsRequest.getLocationFromAddress(request.getParameter("start-address"));
       } catch (ApiException e) {
-        // request to Geocoding API failed
+        // Request to Geocoding API failed.
         response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, e.getMessage());
         return ;
       } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new RuntimeException(e);
-      }
+      } 
       if (point == null) {
-        // Geocoding API didn't find the coordinates corresponding to given address
+        // Geocoding API didn't find the coordinates corresponding to given address.
         response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid address!");
       }
       lat = point.lat;
@@ -119,9 +119,17 @@ public class NewRequestServlet extends HttpServlet {
     }
 
     DeliverySlot deliverySlot = new DeliverySlot(deliveryDay, startTimeSeconds, endTimeSeconds);
+    addDeliveryRequestResponse(deliverySlot, request, response);
     
+    FirebaseApp defaultApp;
     //initialize firebase app 
-    FirebaseApp defaultApp = initializeFirebaseApp();
+    try {
+      defaultApp = initializeFirebaseApp();
+    } catch (NullPointerException e) {
+      // Firebase credentials not found
+      response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, e.getMessage());
+      return ;
+    }
     //check the name of defaultApp to make sure that the correct app is connected
     System.out.println(defaultApp.getName());
 
@@ -153,14 +161,13 @@ public class NewRequestServlet extends HttpServlet {
       ));
     }
 
-    addDeliveryRequestResponse(deliverySlot, request, response);
   }
 
-  private void addDeliveryRequestResponse(DeliverySlot deliverySlot, HttpServletRequest request, HttpServletResponse response) throws IOException {
+  protected void addDeliveryRequestResponse(DeliverySlot deliverySlot, HttpServletRequest request, HttpServletResponse response) throws IOException {
     Gson gson = new Gson();
     String json = gson.toJson(deliverySlot);
     response.setContentType("application/json;");
-    System.out.println(json);
+
     response.getWriter().println(json);
   }
 
