@@ -25,6 +25,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+/** 
+ * 
+ */
 public class OrderHandler {
   private PathFinder pathFinder;
 
@@ -32,6 +35,10 @@ public class OrderHandler {
     this.pathFinder = pathFinder;
   }
 
+  /** 
+   * Creates an "Order" Entity and adds it to datastore. Each order contains a set of books and the
+   * library that has all the requested books.
+   */
   private void addOrderToDatastore(LibraryPoint library, ArrayList<String> bookIds, String userId, Point address) {
     Entity order = new Entity("Order");
     order.setProperty("libraryId", (int)library.getLibraryId());
@@ -48,8 +55,7 @@ public class OrderHandler {
 
   /**
    * Given a user's Id, the shipping address and an array of book ids, it creates a set of orders
-   * and adds them to datastore. Each order contains a set of books and the library that contains
-   * all the requested books.
+   * and adds them to datastore.
    */
   public boolean makeOrders(String userId, Point address, List<String> bookIds) throws ApiException, IOException, InterruptedException {
     HashMap <LibraryPoint, ArrayList<String>> libraryBookIds = new HashMap<>();
@@ -80,6 +86,10 @@ public class OrderHandler {
     return true;
   }
 
+  /** 
+   * Given a List of "Library" Entity objects, it returns the one for which the time to get from it
+   * to address is minimised. 
+   */
   Entity getClosestLibrary(List<Entity> libraries, Point address) throws ApiException, IOException, InterruptedException {
     int minTimeFromAddressToLibrary = Integer.MAX_VALUE;
     Entity closestLibrary = null;
