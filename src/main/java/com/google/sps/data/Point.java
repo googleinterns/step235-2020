@@ -42,6 +42,7 @@ public class Point {
   
   /**
    * Returns the area of the point from its latitude and longitude.
+   * TODO[ak47na]: change function to return different area values depending on coordinates.
    */
   public int getArea() {
     return 1;
@@ -61,6 +62,7 @@ public class Point {
 
   @Override
   public int hashCode() {
+    //TODO[ak47na]: change hashCode from math formula to the unique placeId in Maps API.
     int value = (int)(10000.0 * this.latitude) * 90 + (int)(10000.0 * this.longitude);
     return value;
   }

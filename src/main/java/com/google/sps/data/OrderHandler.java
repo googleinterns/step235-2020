@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /** 
- * 
+ * Class used for creating and storing orders.
  */
 public class OrderHandler {
   private PathFinder pathFinder;

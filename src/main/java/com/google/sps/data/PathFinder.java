@@ -14,11 +14,9 @@
 
 package com.google.sps.data;
 
-
 import com.google.maps.errors.ApiException;
 import java.io.IOException;
 import java.lang.InterruptedException;
-
 
 interface PathFinder {
   public int getTimeBetweenPoints(Point A, Point B)  throws ApiException, IOException, InterruptedException ;
