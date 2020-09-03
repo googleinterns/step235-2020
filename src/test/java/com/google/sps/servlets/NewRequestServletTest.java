@@ -21,6 +21,8 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.sps.data.FirebaseAuthentication;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -65,11 +67,19 @@ public final class NewRequestServletTest {
   @Mock
   HttpServletResponse response;
 
+  @Mock
+  FirebaseAuthentication firebaseAuth;
+
+  String idToken;
+  String userId;
+
   @Before
   public void setUp() {
     helper.setUp();
     // initialize Mock objects
     MockitoAnnotations.initMocks(this);
+    idToken = "idToken0";
+    userId = "user0";
   }
 
   @After
@@ -82,14 +92,17 @@ public final class NewRequestServletTest {
    * HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testPastDeliveryDate() throws IOException, ServletException {
+  public void testPastDeliveryDate() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn(idToken);
     when(request.getParameter("delivery-date")).thenReturn("2020-08-10");
-    when(request.getParameter("start-time")).thenReturn("05:5");
+    when(request.getParameter("start-time")).thenReturn("05:05");
     when(request.getParameter("end-time")).thenReturn("05:10");
     when(request.getParameter("max-stops")).thenReturn("1");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    when(firebaseAuth.getUserIdFromIdToken(idToken)).thenReturn(userId);
+    requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
 
     verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
@@ -100,7 +113,8 @@ public final class NewRequestServletTest {
    * send HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testStartTimeAfterEndTime() throws IOException, ServletException {
+  public void testInvalidRequest() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn(idToken);
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("05:10");
@@ -108,6 +122,8 @@ public final class NewRequestServletTest {
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    requestServlet.setFirebaseAuth(firebaseAuth);
+    when(firebaseAuth.getUserIdFromIdToken(idToken)).thenReturn(userId);
     requestServlet.doPost(request, response);
     // the date is valid, thus "Please enter a valid date!" shouldn't be sent
     verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
@@ -117,7 +133,8 @@ public final class NewRequestServletTest {
    * Tests that when correct data is sent to the servlet, no BAD_REQUEST errors are sent. 
    */
   @Test
-  public void testValidData() throws IOException, ServletException {
+  public void testValidData() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn(idToken);
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("15:10");
@@ -128,18 +145,17 @@ public final class NewRequestServletTest {
     when(response.getWriter()).thenReturn(new PrintWriter(System.out));
 
     NewRequestServlet requestServlet = spy(new NewRequestServlet());
-    
+
+    when(firebaseAuth.getUserIdFromIdToken(idToken)).thenReturn(userId);
+    requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
-    // The date is valid, thus "Please enter a valid date!" shouldn't be sent.
-    verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
-    verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid time!");
-    verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter between 1 and 25 stops!");
-    verify(requestServlet).addDeliveryRequestResponse(any(), eq(request), eq(response));
-    
+
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
-    // The delivery request is not added to datastore because request to initialize Firebase fails. 
-    // TODO[ak47na]: update test to check that the request is added after Firebase is succesfully 
-    // initialised.
-    assertEquals(0, ds.prepare(new Query("deliveryRequest")).countEntities(FetchOptions.Builder.withLimit(10)));
+    // The user is a new user and it is added to datastore.
+    Query userQuery = new Query("UserData")
+          .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, userId));
+    assertEquals(1, ds.prepare(userQuery).countEntities(FetchOptions.Builder.withLimit(10)));
+    // TODO[ak47na]: update test to check that the delivery request is added after 
+    // NewRequestServlet.java is refactored.
   }
 }
