@@ -22,6 +22,8 @@ import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.sps.data.BadRequestException;
+import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,8 +32,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.junit.Test;
@@ -157,5 +161,27 @@ public final class NewRequestServletTest {
     assertEquals(1, ds.prepare(userQuery).countEntities(FetchOptions.Builder.withLimit(10)));
     // TODO[ak47na]: update test to check that the delivery request is added after 
     // NewRequestServlet.java is refactored.
+  }
+
+  @Test
+  public void testCreateSlotSuccessfully() throws IOException, ServletException, BadRequestException {
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    slotManager.createSlot("2020-09-26", "180", "05:15", "15:10", "1", "user0");
+    slotManager.addSlotToDatastore();
+    // Query datastore and verify that the request is added.
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    Query deliveryRequestQuery = new Query("deliveryRequest")
+          .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, "user0"));
+    assertEquals(1, ds.prepare(deliveryRequestQuery).countEntities(FetchOptions.Builder.withLimit(1)));
+  }
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
+  @Test
+  public void testCreateSlotInvalidDate() throws IOException, ServletException, BadRequestException {
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    thrown.expect(BadRequestException.class);
+	slotManager.createSlot("2020-09-26", "180", "05:15", "05:00", "1", "user0");
   }
 }

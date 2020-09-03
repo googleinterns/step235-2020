@@ -103,7 +103,7 @@ public class NewRequestServlet extends HttpServlet {
       // the delivery request is added to datastore and processed the day before deliveryDay
       // delayed processing optimizes the order matching algorithm by taking into account other
       // or future delivery requests and couriers
-      DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(slotManager));
+      slotManager.addSlotToDatastore();
     }
 
   }
@@ -150,21 +150,5 @@ public class NewRequestServlet extends HttpServlet {
     }
     userEntity.setProperty("isCourier", "true");
     datastore.put(userEntity);
-  }
-
-  /**
-   * create a deliveryRequest Entity and store it in the datastore.
-   */
-  private Entity createDeliveryRequestEntity(DeliverySlotManager slotManager) {
-    Entity deliveryRequest = new Entity("deliveryRequest");
-
-    deliveryRequest.setProperty("deliveryDay", slotManager.getDeliverySlot().getDeliveryDay());
-    deliveryRequest.setProperty("startTime", slotManager.getDeliverySlot().getStartTime());
-    deliveryRequest.setProperty("endTime", slotManager.getDeliverySlot().getEndTime());
-    deliveryRequest.setProperty("userId", slotManager.getUserId());
-    deliveryRequest.setProperty("startLat", slotManager.getStartLatitude());
-    deliveryRequest.setProperty("startLng", slotManager.getStartLongitude());
-
-    return deliveryRequest;
   }
 }

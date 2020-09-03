@@ -12,7 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 package com.google.sps.data;
+
 import com.google.api.gax.rpc.NotFoundException;
+import com.google.appengine.api.datastore.DatastoreService;
+import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.appengine.api.datastore.Entity;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.maps.model.LatLng;
@@ -152,5 +156,25 @@ public class DeliverySlotManager {
   }
   public String getUserId() {
     return userId;
+  }
+
+  public void addSlotToDatastore() {
+    DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity());
+  }
+
+  /**
+   * create a deliveryRequest Entity and store it in the datastore.
+   */
+  private Entity createDeliveryRequestEntity() {
+    Entity deliveryRequest = new Entity("deliveryRequest");
+
+    deliveryRequest.setProperty("deliveryDay", slotRequest.deliverySlot.getDeliveryDay());
+    deliveryRequest.setProperty("startTime", slotRequest.deliverySlot.getStartTime());
+    deliveryRequest.setProperty("endTime", slotRequest.deliverySlot.getEndTime());
+    deliveryRequest.setProperty("uid", userId);
+    deliveryRequest.setProperty("startLat", slotRequest.latitude);
+    deliveryRequest.setProperty("startLng", slotRequest.longitude);
+
+    return deliveryRequest;
   }
 }
