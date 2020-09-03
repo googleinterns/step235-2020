@@ -17,6 +17,15 @@
  */
 
 /**
+ * Add menu when DOM is loaded.
+ */
+document.addEventListener('DOMContentLoaded', () => {
+  if(document.getElementsByClassName('menu-container').length) {
+    addMenu();
+  }
+});
+
+/**
  * Set the idToken input value so that it can be sent to the server
  */
 function setIdToken() {

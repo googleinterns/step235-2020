@@ -1,28 +1,32 @@
-const API_KEY = 'AIzaSyA4o8AqxFRAFJD_S5-cEXPlJMqVeGHhGLI';
-// To get results from UK publishing houses.
-const country = 'UK';
-
 /**
  * Performs the GET request to the Google Books API.
  */
 
-$(document).ready(function() {
-  // When this button is clicked, the GET request is triggered.
-  $('#search-button').click(function() {
-    const URL = getRequestedURL();
-    if (URL.length !== 0) {
-      $.ajax({
-        url: URL,
-        type: 'GET',
-        success: function(result) {
-          addBooksGrid(result.items);
-        },
-        error: function(error) {
-          alert(`Error ${error}. Please try again.`);
-        },
+document.addEventListener('DOMContentLoaded', () => {
+  // Disable button initially
+  if (document.getElementById('search-button')) {
+    document.getElementById('search-button').disabled = true;
+    // Obtain the API_KEY from local file.
+    fetch('apiKey.json').then(response => response.json()).then(jsonResponse => {
+      apikey = jsonResponse.apiKey;
+      document.getElementById('search-button').disabled = false;
+      // When this button is clicked, the GET request is triggered.
+      document.getElementById('search-button').addEventListener('click', function() {
+        const URL = getRequestedURL(apikey);
+        if (URL.length !== 0) {
+          fetch(URL).then(response => {
+            if (response.status === 200) {
+              response.json().then(result => {
+                addBooksGrid(result.items);
+              });
+            } else {
+              alert(`Error ${response.status}. Please try again.`);
+            }
+          });
+        }
       });
-    }
-  });
+    });
+  }
 });
 
 /**
@@ -30,36 +34,42 @@ $(document).ready(function() {
  * Books API. Also adds the API_KEY and the other useful queries.
  */
 
-function getRequestedURL() {
+function getRequestedURL(API_KEY) {
   const title = document.getElementById('title');
   const author = document.getElementById('author');
   const isbn = document.getElementById('isbn');
+  return processURL(title.value, author.value, isbn.value, API_KEY);
+}
+
+function processURL(title, author, isbn, API_KEY) {
+  // To get results from UK publishing houses.
+  const COUNTRY = 'UK';
   // Cannot display results for empty search queries.
-  if (!title.value && !author.value && !isbn.value) {
+  if (!title && !author && !isbn) {
     alert('Please complete at least one field for your search!');
     return '';
   }
   // The ISBN is unique for each book, so if the ISBN is set, the author and title are not
   // taken into account.
-  if (isbn.value && (title.value || author.value)) {
+  if (isbn && (title || author)) {
     alert('Search by ISBN does not allow title/author fields');
     return '';
   }
   let url = 'https://www.googleapis.com/books/v1/volumes?q=';
   // Search by ISBN.
-  if (isbn.value) {
-    url += `isbn:${isbn.value}`;
+  if (isbn) {
+    url += `isbn:${isbn}`;
   }
   // Search by title.
-  if (title.value) {
-    url += `intitle:${title.value}+`;
+  if (title) {
+    url += `intitle:${title}+`;
   }
   // Search by author.
-  if (author.value) {
-    url += `inauthor:${author.value}`;
+  if (author) {
+    url += `inauthor:${author}`;
   }
-  // Set country code.
-  url += `&country=${country}`;
+  // Set COUNTRY code.
+  url += `&country=${COUNTRY}`;
   url += `&key=${API_KEY}`;
   return url;
 }
@@ -108,7 +118,9 @@ function createBookElement(bookJSON) {
   book.append(authors);
   let button = document.createElement('button');
   button.textContent = 'View Details';
+  button.addEventListener('click', function() {
+    location.href = `/bookDetails.html?id=${bookJSON.id}`;
+  });
   book.append(button);
-  // TODO [anamariamilcu] Add onclick action to redirect to seeing details.
   return book;
 }

@@ -7,7 +7,7 @@ body {
   z-index: -1; 
 }
 
-h1, h4, h3, p, label {
+h1, h2, h4, h3, p, label {
   color: rgb(0, 102, 204);
 }
 
@@ -24,6 +24,64 @@ p, label {
   margin-left: auto;
   margin-right: auto;
   width: 900px;
+}
+
+.details-wrapper {
+  margin-left: auto;
+  margin-right: auto;
+  width: 1000px;
+  display: grid;
+  grid-template-areas:
+    'header header'
+    'left right'
+    'footer footer';
+  grid-gap: 10px;
+  padding: 10px;
+}
+
+#title-header {
+  grid-area: header;
+}
+
+.details-wrapper p {
+  font-weight: bold;
+}
+
+#viewer-container {
+  width: 500px;
+  height: 600px;
+  float: left;
+  text-align: center;
+  border: 1px solid #0545b3;
+  background: rgba(255, 255, 255, 0.5);
+  grid-area: left;
+}
+
+#no-preview {
+  text-align: center;
+  font-size: 30px;
+  position: absolute;
+  top: 50%;
+  transform: translate(0, -50%);
+}
+
+#description-container {
+  padding: 20px;
+  border: 2px solid #0545b3;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.5);
+  grid-area: footer;
+}
+
+#details-container {
+  padding: 30px;
+  float: right;
+  width: 470px;
+  height: 600px;
+  border: 2px solid #0545b3;
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.5);
+  grid-area: right;
 }
 
 * {
@@ -149,11 +207,11 @@ input, textarea {
 
 .book-item {
   display: inline-block;
-  border: 2px solid #0545b3;
   width: 320px;
   padding: 25px;
   text-align: center;
   margin: 20px;
+  border: 2px solid #0545b3;
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.5);
 }

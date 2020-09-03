@@ -1,0 +1,22 @@
+{
+  "name": "alphabooks",
+  "version": "1.0.0",
+  "description": "This repo contains the STEP Internship project of Ana Kapros and Ana-Maria Milcu.",
+  "main": "karma.conf.js",
+  "scripts": {
+    "test": "karma start --single-run --browsers ChromeHeadless karma.conf.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/googleinterns/step235-2020.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/googleinterns/step235-2020/issues"
+  },
+  "homepage": "https://github.com/googleinterns/step235-2020#readme",
+  "devDependencies": {
+    "karma-jasmine": "^4.0.1"
+  }
+}

@@ -10,22 +10,31 @@
     <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
     <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
     <script src="common.js"></script>
-    <script src="app.js"></script>
     <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+    <script src="app.js"></script>
+    <script type="text/javascript" src="https://www.google.com/books/jsapi.js"></script>
+    <script src="detailsScript.js"></script>
   </head>
-  <body onload="displayCurrentAddress();setIdToken()">
+  <body>
 
     <div class="menu-container"></div>
 
-    <div class="content-container">
-      <h3>Please set your address before you place an order.</h3>
-      <p>Set your address here:</p>
-      <form id="address-form "method="POST" action="/user-data">
-        <textarea id="address" name="address" rows="4" cols="40"></textarea>
-        <input type="hidden" name="idToken" id="idToken"/>
-        <input id="submit-button" type="submit" value="Set address"/>
-      </form>
+    <div class="details-wrapper">
+      <h1 id="title-header"></h1>
+      <div id="viewer-container"></div>
+      <div id="details-container">
+        <p id="authors"></p>
+        <p id="published-date"></p>
+        <p id="publisher"></p>
+        <p id="category"></p>
+        <p id="page-count"></p>
+        <p id="identifiers"></p>
+        <button id="add-to-cart">Add to cart!</button>
+      </div>
+      <div id="description-container">
+        <h2>Description:</h2>
+        <p id="description"></p>
+      </div>
     </div>
-
   </body>
 <html>
