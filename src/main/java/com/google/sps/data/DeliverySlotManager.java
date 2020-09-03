@@ -34,7 +34,7 @@ import java.util.Date;
  */
 public class DeliverySlotManager {
 
-  public class CreateSlotManager {
+  private class CreateSlotManager {
     private int timezoneOffset;
     private DeliverySlot deliverySlot;
     private int maxStops;
@@ -145,6 +145,12 @@ public class DeliverySlotManager {
     this.userId = userId;
   }
 
+  public void setSlotStartingPoint(String address) throws ApiException, InterruptedException, IOException, DataNotFoundException {
+    this.slotRequest.setCoordinatesFromAddress(address);
+  }
+  public void setSlotStartingPoint(String latitude, String longitude) throws BadRequestException {
+    this.slotRequest.setCoordinates(latitude, longitude);
+  }
   public DeliverySlot getDeliverySlot() {
     return slotRequest.deliverySlot;
   }

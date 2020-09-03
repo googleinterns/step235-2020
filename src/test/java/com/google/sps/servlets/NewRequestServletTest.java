@@ -21,8 +21,10 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.maps.errors.ApiException;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.sps.data.BadRequestException;
+import com.google.sps.data.DataNotFoundException;
 import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
 import java.io.IOException;
@@ -164,9 +166,10 @@ public final class NewRequestServletTest {
   }
 
   @Test
-  public void testCreateSlotSuccessfully() throws IOException, ServletException, BadRequestException {
+  public void testCreateSlotSuccessfully() throws ApiException, IOException, InterruptedException, ServletException, BadRequestException, DataNotFoundException {
     DeliverySlotManager slotManager = new DeliverySlotManager();
     slotManager.createSlot("2020-09-26", "180", "05:15", "15:10", "1", "user0");
+    slotManager.setSlotStartingPoint("277 Bedford Ave, Brooklyn, NY 11211, USA");
     slotManager.addSlotToDatastore();
     // Query datastore and verify that the request is added.
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
