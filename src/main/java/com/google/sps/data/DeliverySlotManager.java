@@ -34,6 +34,9 @@ import java.util.Date;
  */
 public class DeliverySlotManager {
 
+  /** 
+   * Class that creates a delivery slot.
+   */
   private class CreateSlotManager {
     private int timezoneOffset;
     private DeliverySlot deliverySlot;
@@ -54,12 +57,20 @@ public class DeliverySlotManager {
         throw new BadRequestException("Please enter between 1 and 25 stops!");
       }
     }
-
+    
+    /** 
+     * Sets the coordinates for the starting point of the delivery.
+     * TODO[ak47na]: represent latitude and longitude as a Point object.
+     */
     public void setCoordinates(String latitude, String longitude) throws BadRequestException {
       this.latitude = parseDouble(latitude);
       this.longitude = parseDouble(longitude);
     }
-
+    
+    /**
+     * Calls Geocoding API to find the latitude and longitude of the provided address, and sets 
+     * them as the starting point of the delivery.
+     */
     public void setCoordinatesFromAddress(String startAddress) throws ApiException, InterruptedException, IOException, DataNotFoundException {
       LatLng point = MapsRequest.getLocationFromAddress(startAddress);
       if (point == null) {
@@ -139,7 +150,11 @@ public class DeliverySlotManager {
 
   private CreateSlotManager slotRequest;
   private String userId;
-
+  
+  /** 
+   * Creates a delivery slot request given the delivery day, the timezone offset in minutes, start
+   * and end times of the delivery, the maximum number of stops and user's id.
+   */
   public void createSlot(String deliveryDay, String timezoneOffsetMinutes, String startTime, String endTime, String maxStops, String userId) throws BadRequestException {
     this.slotRequest = new CreateSlotManager(deliveryDay, timezoneOffsetMinutes, startTime, endTime, maxStops);
     this.userId = userId;
@@ -169,7 +184,7 @@ public class DeliverySlotManager {
   }
 
   /**
-   * create a deliveryRequest Entity and store it in the datastore.
+   * Create a deliveryRequest Entity with properties' values from slotManager.
    */
   private Entity createDeliveryRequestEntity() {
     Entity deliveryRequest = new Entity("deliveryRequest");
