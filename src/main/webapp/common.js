@@ -20,14 +20,22 @@
  * Set the idToken input value so that it can be sent to the server
  */
 function setIdToken() {
-  if (document.getElementById("idToken")) {
-    firebase.auth().currentUser.getIdToken(/* forceRefresh */ false).then(function(idToken) {
-      document.getElementById("idToken").value = idToken;
-    });
+  firebase.auth().onAuthStateChanged(function(user) {
+  if (user) {
+    // User is signed in.
+    if (document.getElementById('idToken')) {
+      user.getIdToken(/* forceRefresh */ true).then(function(idToken) {
+        document.getElementById('idToken').value = idToken;
+      });
+    } else {
+      // /TODO[ak47na]: handle error when idToken field is not loaded
+      console.log('Error');
+    }
   } else {
-    //TODO[ak47na]: handle error when idToken field is not loaded
-    console.log("Error");
+    // redirect the user to home page.
+    window.location.pathname = '/index.html';
   }
+  });
 }
 
 /**
@@ -36,23 +44,22 @@ function setIdToken() {
 function setTimezoneOffsetFromDate(dateId) {
   date = document.getElementById(dateId);
   if (date) {
-    // update timezone-offset from the date of dateId 
+    // update timezone-offset from the date of dateId
     timezone = new Date(date.value).getTimezoneOffset();
     document.getElementById('timezone-offset').value = timezone;
   } else {
     //TODO[ak47na]: handle error when dateId input element is not loaded
-    alert("Please select a date!");
+    alert('Please select a date!');
   }
 }
- 
+
 /**
  * @param {string} queryString The full query string.
  * @return {!Object<string, string>} The parsed query parameters.
  */
 function parseQueryString(queryString) {
   // Remove first character if it is ? or #.
-  if (queryString.length &&
-    (queryString.charAt(0) == '#' || queryString.charAt(0) == '?')) {
+  if (queryString.length && (queryString.charAt(0) == '#' || queryString.charAt(0) == '?')) {
     queryString = queryString.substring(1);
   }
   var config = {};
@@ -72,9 +79,15 @@ function parseQueryString(queryString) {
  */
 
 function displayCurrentAddress() {
-  const addressBox = document.getElementById('address');
-  fetch('/user-data').then(response => response.json()).then((userInfo) => {
-    addressBox.value = userInfo.address;
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      user.getIdToken(true).then(function(idToken) {
+        const addressBox = document.getElementById('address');
+        fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
+        addressBox.value = userInfo.address;
+        });
+      });
+    }
   });
 }
 
@@ -104,15 +117,19 @@ function addMenu() {
   delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
-  let displayJourneys;
-  fetch('/user-data').then(response => response.json()).then((userInfo) => {
-    console.log(userInfo);
-    displayJourneys = userInfo.isCourier;
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      user.getIdToken(true).then(function(idToken) {
+        fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
+          console.log(userInfo);
+          if (userInfo.isCourier === true) {
+            // Only display this page for users that are set in the database as couriers.
+            see_journeys.innerText = 'See journeys';
+            see_journeys.href = 'journeys.html';
+            menuElement.append(see_journeys);
+          }
+        });
+      });
+    }
   });
-  // Only display this page for users that are set in the database as couriers.
-  if (displayJourneys) {
-    see_journeys.innerText = 'See journeys';
-    see_journeys.href = 'journeys.html';
-    menuElement.append(see_journeys);
-  }
 }

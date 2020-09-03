@@ -19,10 +19,10 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
-
+import com.google.sps.data.FirebaseSingletonApp;
 import com.google.firebase.auth.*;
 import com.google.firebase.FirebaseApp;
-import com.google.firebase.FirebaseOptions;
+import com.google.sps.data.FirebaseAuthentication;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
@@ -38,8 +38,27 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date; 
 
+// TODO[ak47na]: Add helper classes to make the code testable without mocking HttpServletRequest and HttpServletResponse.
 @WebServlet("/new-delivery-request")
 public class NewRequestServlet extends HttpServlet {
+  private FirebaseAuthentication firebaseAuth;
+  
+  @Override
+  public void init() throws ServletException {
+    // initialize firebase app 
+    try {
+      setFirebaseAuth(new FirebaseAuthentication(FirebaseSingletonApp.getInstance()));
+    } catch (IOException e) {
+      System.out.println(e.getMessage());
+      // TODO: refator code to throw IOException; the exception must be catched because init() does
+      // not throw IOException()
+    }
+  }
+
+  public void setFirebaseAuth(FirebaseAuthentication firebaseAuth) {
+    this.firebaseAuth = firebaseAuth;
+  }
+  
   /**
    * The function handles POST requests sent by delivery-form in deliveryRequest.html 
    */
@@ -84,23 +103,13 @@ public class NewRequestServlet extends HttpServlet {
       return ;
     }
     
-    // initialize firebase app 
-    FirebaseApp defaultApp = initializeFirebaseApp();
-    //check the name of defaultApp to make sure that the correct app is connected
-    System.out.println(defaultApp.getName());
-
     String uid = null;
     try {
-      // get the idToken from hidden input field
-      String idToken = request.getParameter("idToken");
-      FirebaseToken decodedToken = FirebaseAuth.getInstance().verifyIdToken(idToken);
-      uid = decodedToken.getUid();
-      System.out.println(uid);
-      UserRecord user = FirebaseAuth.getInstance().getUser(uid);
-      System.out.println(user.getEmail());
+      // get the idToken from hidden input field 
+      uid = firebaseAuth.getUserIdFromIdToken(request.getParameter("idToken"));
     } catch (FirebaseAuthException e) {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid idToken");
-      return ;
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid idToken");
+      return;
     }
 
     markUserAsCourier(uid);
@@ -108,13 +117,14 @@ public class NewRequestServlet extends HttpServlet {
       // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
       processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
     } else {
-    // the delivery request is added to datastore and processed the day before deliveryDay
-    // delayed processing optimizes the order matching algorithm by taking into account other
-    // or future delivery requests and couriers
-    DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
-    ));
+      // the delivery request is added to datastore and processed the day before deliveryDay
+      // delayed processing optimizes the order matching algorithm by taking into account other
+      // or future delivery requests and couriers
+      DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
+        deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
+      ));
     }
+    response.sendRedirect("/loggedIn.html");
   }
 
   /** 
@@ -126,17 +136,6 @@ public class NewRequestServlet extends HttpServlet {
     // the stops the courier must make; the Waypoint objects provide information such as the books 
     // that should be taken/delivered
     // addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
-  }
-
-  /**
-   * Initialize firebase SDK and return the FirebaseApp object
-   */
-  private FirebaseApp initializeFirebaseApp() {
-    FirebaseOptions options = new FirebaseOptions.Builder()
-    //.setCredentials(GoogleCredentials.getApplicationDefault()) 
-    .setDatabaseUrl("https://com-alphabooks-step-2020.firebaseio.com")
-    .build();
-    return FirebaseApp.initializeApp(options);
   }
 
   /** 
@@ -152,11 +151,12 @@ public class NewRequestServlet extends HttpServlet {
             .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, uid));
     PreparedQuery results = datastore.prepare(query);
     userEntity = results.asSingleEntity();
-    if (userEntity != null && userEntity.getProperty("isCourier").equals("true")) {
-      // This is not the first request, so user is already marked as courier.
-      return;
-    }
-    if (userEntity == null) {
+    if (userEntity != null) {
+      if(userEntity.getProperty("isCourier") != null && userEntity.getProperty("isCourier").equals("true")) {
+        // This is not the first request, so user is already marked as courier.
+        return;
+      }
+    } else {
       // User does not exist in the database.
       userEntity = new Entity("UserData");
       userEntity.setProperty("uid", uid);
@@ -224,5 +224,4 @@ public class NewRequestServlet extends HttpServlet {
     }
     return time;
   }
-
 }

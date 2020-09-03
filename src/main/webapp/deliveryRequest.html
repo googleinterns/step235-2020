@@ -14,14 +14,14 @@
    
     <meta name="viewport" content="width=device-width, initial-scale=1">
   </head>
-  <body onload="addMenu()">
+  <body onload="addMenu();setIdToken()">
     <script src="app.js"></script>
     <script src="common.js"></script>
     <div class="menu-container"></div>
 
     <div class="content-container">
       <h1>Request a delivery<h1>
-      <form id="delivery-form" method="POST" action="/new-delivery-request" oninput="setIdToken()">
+      <form id="delivery-form" method="POST" action="/new-delivery-request">
       <label for="delivery-date"><p>Choose the date of your journey:<p></label>
       <input type="date" id="delivery-date" name="delivery-date" onchange="setTimezoneOffsetFromDate('delivery-date')">
       <label for="start-time"><p>Choose the starting time of your journey:<p></label>

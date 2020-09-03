@@ -15,16 +15,17 @@
 
   // Your web app's Firebase configuration
   var firebaseConfig = {
-    apiKey: "AIzaSyBaqlLYgCHBS8SAXllzPfRuCLoRVO_IrxI",
-    authDomain: "com-alphabooks-step-2020.firebaseapp.com",
-    databaseURL: "https://com-alphabooks-step-2020.firebaseio.com",
-    projectId: "google.com:alphabooks-step-2020",
-    storageBucket: "undefined",
-    messagingSenderId: "41470712328",
-    appId: "1:41470712328:web:d068898015644da81d8fbd",
-    measurementId: "G-ZN6YQE227D"
+    apiKey: "AIzaSyBrrPrvZARKr5QJVV1W17ngKB5YdMTR_nw",
+    authDomain: "alphabooks-step-2020.firebaseapp.com",
+    databaseURL: "https://alphabooks-step-2020.firebaseio.com",
+    projectId: "alphabooks-step-2020",
+    storageBucket: "alphabooks-step-2020.appspot.com",
+    messagingSenderId: "462535915237",
+    appId: "1:462535915237:web:796196bc5d2f7f60cbc60c",
+    measurementId: "G-GYTC6SV3LC"
   };
   // Initialize Firebase
   firebase.initializeApp(firebaseConfig);
   firebase.analytics();
+  
   var CLIENT_ID = null;

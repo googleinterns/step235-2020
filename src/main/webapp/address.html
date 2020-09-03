@@ -13,14 +13,14 @@
     <script src="app.js"></script>
     <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
   </head>
-  <body onload="addMenu();displayCurrentAddress()">
+  <body onload="addMenu();displayCurrentAddress();setIdToken()">
 
     <div class="menu-container"></div>
 
     <div class="content-container">
       <h3>Please set your address before you place an order.</h3>
       <p>Set your address here:</p>
-      <form id="address-form "method="POST" action="/user-data" oninput="setIdToken()">
+      <form id="address-form "method="POST" action="/user-data">
         <textarea id="address" name="address" rows="4" cols="40"></textarea>
         <input type="hidden" name="idToken" id="idToken"/>
         <input id="submit-button" type="submit" value="Set address"/>
