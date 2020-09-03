@@ -28,24 +28,16 @@ document.addEventListener('DOMContentLoaded', () => {
 /**
  * Set the idToken input value so that it can be sent to the server
  */
-function setIdToken() {
-  firebase.auth().onAuthStateChanged(function(user) {
-  if (user) {
-    // User is signed in.
-    if (document.getElementById('idToken')) {
-      user.getIdToken(/* forceRefresh */ true).then(function(idToken) {
-        document.getElementById('idToken').value = idToken;
-      });
-    } else {
-      // /TODO[ak47na]: handle error when idToken field is not loaded
-      console.log('Error');
-    }
+async function setIdToken() {
+  let idToken = await getIdToken();
+  if (document.getElementById('idToken')) {
+    document.getElementById('idToken').value = idToken;
   } else {
-    // redirect the user to home page.
-    window.location.pathname = '/index.html';
+    // /TODO[ak47na]: handle error when idToken field is not loaded
+    console.log('Error');
   }
-  });
 }
+
 
 /**
  * Set the value of timezone-offset element from the dateId element
@@ -83,20 +75,36 @@ function parseQueryString(queryString) {
 }
 
 /**
+ * Get the idToken used in the Java Backend to access Firebase data.
+ * Return it as a promise.
+ */
+
+function getIdToken() {
+  return new Promise(function(resolve, reject) {
+    firebase.auth().onAuthStateChanged(function(user) {
+      if (user) {
+        user.getIdToken(true).then(function(idToken) {
+          resolve(idToken);
+        });
+      } else {
+        // Redirect the user to home page where he can log in.
+        window.location.pathname = '/index.html';
+        reject(Error('You are not signed in'));
+      }
+    });
+  });
+}
+
+/**
  * Method that displays in the address box the old address, so it would be easier for
  * users to edit it.
  */
 
-function displayCurrentAddress() {
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      user.getIdToken(true).then(function(idToken) {
-        const addressBox = document.getElementById('address');
-        fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
-        addressBox.value = userInfo.address;
-        });
-      });
-    }
+async function displayCurrentAddress() {
+  let idToken = await getIdToken();
+  const addressBox = document.getElementById('address');
+  fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
+    addressBox.value = userInfo.address;
   });
 }
 
@@ -104,7 +112,7 @@ function displayCurrentAddress() {
  * Method that builds for every page with a "menu-container div" a navigable menu.
  */
 
-function addMenu() {
+async function addMenu() {
   const menuElement = document.getElementsByClassName('menu-container')[0];
   const header = document.createElement('h3');
   header.innerText = 'MENU';
@@ -126,19 +134,13 @@ function addMenu() {
   delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
-  firebase.auth().onAuthStateChanged(function(user) {
-    if (user) {
-      user.getIdToken(true).then(function(idToken) {
-        fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
-          console.log(userInfo);
-          if (userInfo.isCourier === true) {
-            // Only display this page for users that are set in the database as couriers.
-            see_journeys.innerText = 'See journeys';
-            see_journeys.href = 'journeys.html';
-            menuElement.append(see_journeys);
-          }
-        });
-      });
+  let idToken = await getIdToken();
+  fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
+    if (userInfo.isCourier === true) {
+      // Only display this page for users that are set in the database as couriers.
+      see_journeys.innerText = 'See journeys';
+      see_journeys.href = 'journeys.html';
+      menuElement.append(see_journeys);
     }
   });
 }
