@@ -39,17 +39,18 @@ public class LibraryPoint extends Point {
   public int getLibraryId() {
     return libraryId;
   }
+
   public void setLibraryId(int libraryId) {
     this.libraryId = libraryId;
   }
 
   /**
-   * Adds the Google Books ids of the books from bookIdsString to the books that must be borrowed
-   * from this library during current delivery
+   * Given bookIds, a string with ids of the ordered books separated by "&" (e.g. "id1&id2&id3"),
+   * adds the ids to the array of books that must be borrowed from this library during the current 
+   * delivery. 
    */
-  public void addBooks(String bookIdsString) {
-    String[] bookIds = bookIdsString.split("&");
-    booksToBorrow.addAll(Arrays.asList(bookIds));
+  public void addBooks(String bookIds) {
+    booksToBorrow.addAll(Arrays.asList(bookIds.split("&")));
   }
 
   /**

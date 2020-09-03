@@ -19,5 +19,5 @@ import java.io.IOException;
 import java.lang.InterruptedException;
 
 interface PathFinder {
-  public int getTimeBetweenPoints(Point A, Point B)  throws ApiException, IOException, InterruptedException ;
+  public int getTimeBetweenPoints(Point a, Point b)  throws ApiException, IOException, InterruptedException, DataNotFoundException ;
 }

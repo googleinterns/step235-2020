@@ -30,7 +30,7 @@ public class Point {
    * Given an address, the function requests the coordinates corresponding to it from Geolocation
    * API. Then it creates and returns a Point object.
    */
-  public static Point fromAddress(String address) throws ApiException, IOException, InterruptedException {
+  public static Point fromAddress(String address) throws ApiException, IOException, InterruptedException, DataNotFoundException {
     LatLng point = MapsRequest.getLocationFromAddress(address);
     return new Point(point.lat, point.lng);
   }
@@ -49,15 +49,15 @@ public class Point {
   }
 
   /**
-   * Returns true if .this Point has latitude and longitude equal to the ones of B
+   * Returns true if this Point has equal latitude and longitude.
    */
   @Override
   public boolean equals(Object object) {
     if (!(object instanceof Point)) {
       return false;
     }
-    Point B = (Point) object;
-    return (this.latitude == B.latitude) && (this.longitude == B.longitude);
+    Point point = (Point) object;
+    return (this.latitude == point.latitude) && (this.longitude == point.longitude);
   }
 
   @Override

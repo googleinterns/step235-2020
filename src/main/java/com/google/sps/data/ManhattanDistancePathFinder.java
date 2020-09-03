@@ -16,11 +16,11 @@
 package com.google.sps.data;
 
 public class ManhattanDistancePathFinder implements PathFinder {
-  public int manhattanDistance(Point A, Point B) {
-    return (int)(Math.abs(A.latitude - B.latitude) + Math.abs(A.longitude - B.longitude));
+  public int distance(Point a, Point b) {
+    return (int)(Math.abs(a.latitude - b.latitude) + Math.abs(a.longitude - b.longitude));
   }
 
-  public int getTimeBetweenPoints(Point A, Point B) { 
-    return manhattanDistance(A, B);
+  public int getTimeBetweenPoints(Point a, Point b) { 
+    return distance(a, b);
   }
 }

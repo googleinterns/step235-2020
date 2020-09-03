@@ -11,16 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-
 package com.google.sps.data;
 
-import com.google.maps.errors.ApiException;
-import com.google.sps.data.MapsRequest;
-import java.io.IOException;
-import java.lang.InterruptedException;
-
-public class GoogleMapsPathFinder implements PathFinder {
-  public int getTimeBetweenPoints(Point A, Point B) throws ApiException, IOException, InterruptedException, DataNotFoundException { 
-    return MapsRequest.getTimeBetween2Points(A, B);
+public class DataNotFoundException extends Exception {
+  public DataNotFoundException(String error) {
+    super(error);
   }
-}
+} 

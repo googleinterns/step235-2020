@@ -23,7 +23,7 @@ import com.google.maps.model.*;
 import java.io.IOException;
 
 /**
- * Class that create a GeoApiContext variable and handles requests to maps API.
+ * Class that creates a GeoApiContext variable and handles requests to maps API.
  */
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
@@ -41,9 +41,12 @@ public class MapsRequest {
    * Makes a request to Geocoding API and returns the latitude and longitude associated with the
    * address String.
    */
-  public static LatLng getLocationFromAddress(String address) throws IOException, ApiException, InterruptedException {
+  public static LatLng getLocationFromAddress(String address) throws IOException, ApiException, InterruptedException, DataNotFoundException {
     GeocodingResult[] results =  GeocodingApi.geocode(getGeoApiContext(), address).await();
     Gson gson = new GsonBuilder().setPrettyPrinting().create();
+    if (results == null || results.length == 0) {
+      throw new DataNotFoundException("GeocodingApi was unable to find the address!");
+    }
     return results[0].geometry.location;
   }
 
@@ -52,14 +55,18 @@ public class MapsRequest {
    * TODO[ak47na]: update function to get the duration if the journey starts at a given time.
    * TODO[ak47na]: add function parameter to support multiple transportation modes.
    */
-  static int getTimeBetween2Points(Point A, Point B) throws ApiException, IOException, InterruptedException{
+  static int getTimeBetween2Points(Point a, Point b) throws ApiException, IOException, InterruptedException, DataNotFoundException{
     DirectionsResult result =
         DirectionsApi.newRequest(getGeoApiContext())
-            .origin(new LatLng(A.latitude, A.longitude))
-            .destination(new LatLng(B.latitude, B.longitude))
+            .origin(new LatLng(a.latitude, a.longitude))
+            .destination(new LatLng(b.latitude, b.longitude))
             .mode(TravelMode.DRIVING)
             .await();
     int timeInSeconds = 0;
+
+    if (result == null || result.routes.length == 0) {
+      throw new DataNotFoundException("DirectionsApI was unable to find a path between chosen points!");
+    }
     for (DirectionsLeg leg : result.routes[0].legs) {
       timeInSeconds += leg.duration.inSeconds;
     }
