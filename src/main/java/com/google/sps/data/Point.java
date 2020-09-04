@@ -49,7 +49,9 @@ public class Point {
   }
 
   /**
-   * Returns true if this Point has equal latitude and longitude.
+   * Returns true if this Point has equal latitude and longitude. The equality is checked for up to
+   * 4 decimals, leading to 36 feet accuracy.
+   * TODO[ak47na]: use 6 or more decimals and change hashCode function.
    */
   @Override
   public boolean equals(Object object) {
@@ -57,7 +59,8 @@ public class Point {
       return false;
     }
     Point point = (Point) object;
-    return (this.latitude == point.latitude) && (this.longitude == point.longitude);
+    return (int)(10000.0 * this.latitude) == (int)(10000.0 * point.latitude) &&
+      (int)(10000.0 * this.longitude) == (int)(10000.0 * point.longitude);
   }
 
   @Override
