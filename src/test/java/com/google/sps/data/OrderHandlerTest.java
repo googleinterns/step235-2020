@@ -73,7 +73,7 @@ public class OrderHandlerTest {
     Key bookKey = book.getKey();
     Entity libraryEntity = new Entity("Library", bookKey);
     libraryEntity.setProperty("libraryLatitude", library.latitude);
-    libraryEntity.setProperty("libraryLongitude", library.latitude);
+    libraryEntity.setProperty("libraryLongitude", library.longitude);
     libraryEntity.setProperty("libraryId", library.getLibraryId());
     libraryEntity.setProperty("stock", stock);
     return libraryEntity;
@@ -91,7 +91,7 @@ public class OrderHandlerTest {
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
     addBookToDatastore(ds, "book1", Arrays.asList(libraries.get(0), libraries.get(2)));
     addBookToDatastore(ds, "book2", Arrays.asList(libraries.get(0), libraries.get(1)));
-    addBookToDatastore(ds, "book3", Arrays.asList(libraries.get(0), libraries.get(2)));
+    addBookToDatastore(ds, "book3", Arrays.asList(libraries.get(0), libraries.get(2), libraries.get(3)));
     addBookToDatastore(ds, "book4", Arrays.asList());
   }
 
@@ -134,6 +134,17 @@ public class OrderHandlerTest {
     // 2 orders are created.
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
     Assert.assertEquals(2, ds.prepare(new Query("Order")).countEntities(FetchOptions.Builder.withLimit(10)));
+  }
+
+  @Test
+  public void testGetClosestLibrary()  throws InterruptedException, ApiException, IOException, DataNotFoundException {
+    inintializeBooksDatastore();
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    List<Entity> libraryEntities = ds.prepare(new Query("Library")).asList(FetchOptions.Builder.withDefaults());
+    
+    Entity closestLibrary = orderHandler.getClosestLibrary(libraryEntities, new Point(0, 1));
+    // The closest library for (0, 1) is library 3 at point (0, 0).
+    Assert.assertEquals(3, ((Number)closestLibrary.getProperty("libraryId")).intValue());
   }
 
   @After

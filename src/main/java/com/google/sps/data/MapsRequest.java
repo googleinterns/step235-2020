@@ -28,6 +28,7 @@ import java.io.IOException;
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
   public static GeoApiContext getGeoApiContext() {
+    // TODO[ak47na]: provide Maps API key
     if (geoApiContext == null) {
       geoApiContext = new GeoApiContext
           .Builder()

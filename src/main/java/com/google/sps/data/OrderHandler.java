@@ -20,7 +20,6 @@ import com.google.appengine.api.datastore.Entity;
 import com.google.maps.errors.ApiException;
 import java.io.IOException;
 import java.lang.InterruptedException;
-import java.lang.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,7 +56,7 @@ public class OrderHandler {
 
   /**
    * Given a user's Id, the shipping address and an array of book ids, it creates a set of orders
-   * and adds them to datastore.
+   * and adds them to datastore. It returns a Collection of the book ids that are not in stock.
    */
   public Collection<String> makeOrders(String userId, Point address, List<String> bookIds) throws ApiException, IOException, InterruptedException, DataNotFoundException {
     HashMap <LibraryPoint, ArrayList<String>> libraryBookIds = new HashMap<>();
@@ -95,8 +94,15 @@ public class OrderHandler {
    * to address is minimised. 
    */
   Entity getClosestLibrary(List<Entity> libraries, Point address) throws ApiException, IOException, InterruptedException, DataNotFoundException {
+    if (libraries.size() == 0) {
+      // There is no library, thus no library is closest to address.
+      return null;
+    }
     int minTimeFromAddressToLibrary = Integer.MAX_VALUE;
-    Entity closestLibrary = null;
+    // The index in the libraries array of the closest library to address.
+    int closestLibraryIndex = -1;
+    int index = 0;
+    
 
     for (Entity library : libraries) {
       int timeFromAddressToLibrary = pathFinder.getTimeBetweenPoints(address,
@@ -105,9 +111,16 @@ public class OrderHandler {
 
       if (timeFromAddressToLibrary < minTimeFromAddressToLibrary) {
         minTimeFromAddressToLibrary = timeFromAddressToLibrary;
-        closestLibrary = library;
+
+        closestLibraryIndex = index;
       }
+      ++ index;
     }
-    return closestLibrary;
+
+    if (closestLibraryIndex != -1) {
+      return libraries.get(closestLibraryIndex);
+    } else {
+      return null;
+    }
   }
 }
