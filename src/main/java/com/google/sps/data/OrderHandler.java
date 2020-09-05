@@ -31,6 +31,27 @@ import java.util.List;
  */
 public class OrderHandler {
   private PathFinder pathFinder;
+  // The properties of orders in datastore:
+  private enum OrderProperty {
+    LIBRARY_ID("libraryId"),
+    LIBRARY_LAT("libraryLatitude"),
+    LIBRARY_LNG("libraryLongitude"),
+    RECIPIENT_LAT("recipientLatitude"),
+    RECIPIENT_LNG("recipientLongitude"),
+    STATUS("status"),
+    AREA("area"),
+    USER_ID("userId");
+
+    public final String label;
+
+    private OrderProperty(String label) {
+      this.label = label;
+    }
+  }
+
+  public enum OrderStatus {
+    ADDED, ASSIGNED;
+  }
 
   public OrderHandler(PathFinder pathFinder) {
     this.pathFinder = pathFinder;
@@ -42,21 +63,22 @@ public class OrderHandler {
    */
   private void addOrderToDatastore(LibraryPoint library, ArrayList<String> bookIds, String userId, Point address) {
     Entity order = new Entity("Order");
-    order.setProperty("libraryId", (int)library.getLibraryId());
-    order.setProperty("libraryLatitude", library.latitude);
-    order.setProperty("libraryLongitude", library.longitude);
-    order.setProperty("recipientLatitude", address.latitude);
-    order.setProperty("recipientLongitude", address.longitude);
-    order.setProperty("status", "ADDED");
-    order.setProperty("area", library.getArea());
-    order.setProperty("userId", userId);
+    order.setProperty(OrderProperty.LIBRARY_ID.label, (int)library.getLibraryId());
+    order.setProperty(OrderProperty.LIBRARY_LAT.label, library.latitude);
+    order.setProperty(OrderProperty.LIBRARY_LNG.label, library.longitude);
+    order.setProperty(OrderProperty.RECIPIENT_LAT.label, address.latitude);
+    order.setProperty(OrderProperty.RECIPIENT_LNG.label, address.longitude);
+    order.setProperty(OrderProperty.STATUS.label, OrderStatus.ADDED.toString());
+    order.setProperty(OrderProperty.AREA.label, library.getArea());
+    order.setProperty(OrderProperty.USER_ID.label, userId);
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(order);
   }
 
   /**
-   * Given a user's Id, the shipping address and an array of book ids, it creates a set of orders
-   * and adds them to datastore. It returns a Collection of the book ids that are not in stock.
+   * Given a user's Id, the shipping address and an array of book ids, if all books are in stock,
+   * it creates a set of orders and adds them to datastore. Otherwise, it returns a Collection with
+   * the ids of the books that are out of stock.
    */
   public Collection<String> makeOrders(String userId, Point address, List<String> bookIds) throws ApiException, IOException, InterruptedException, DataNotFoundException {
     HashMap <LibraryPoint, ArrayList<String>> libraryBookIds = new HashMap<>();
@@ -64,13 +86,14 @@ public class OrderHandler {
 
     for (String bookId : bookIds) {
       Entity closestLibrary = getClosestLibrary(
-          BooksManager.getLibrariesForBook(bookId, /** setLimit = */false), address);
+          BooksManager.getLibrariesForBook(bookId, /** setLimit = */ false), address);
       if (closestLibrary == null) {
         // there is no library that has the book bookId, thus the book can't be ordered.
         outOfStookBookIds.add(bookId);
       } else {
-        LibraryPoint library = new LibraryPoint((double) closestLibrary.getProperty("libraryLatitude"),
-            (double) closestLibrary.getProperty("libraryLongitude"), ((Number)closestLibrary.getProperty("libraryId")).intValue());
+        LibraryPoint library = new LibraryPoint((double) closestLibrary.getProperty(OrderProperty.LIBRARY_LAT.label),
+            (double) closestLibrary.getProperty(OrderProperty.LIBRARY_LNG.label),
+            ((Number)closestLibrary.getProperty(OrderProperty.LIBRARY_ID.label)).intValue());
 
         if (!libraryBookIds.containsKey(library)) {
           libraryBookIds.put(library, new ArrayList<>());
@@ -91,36 +114,22 @@ public class OrderHandler {
 
   /**
    * Given a List of "Library" Entity objects, it returns the one for which the time to get from it
-   * to address is minimised. 
+   * to address is minimised.
    */
   Entity getClosestLibrary(List<Entity> libraries, Point address) throws ApiException, IOException, InterruptedException, DataNotFoundException {
-    if (libraries.size() == 0) {
-      // There is no library, thus no library is closest to address.
-      return null;
-    }
     int minTimeFromAddressToLibrary = Integer.MAX_VALUE;
-    // The index in the libraries array of the closest library to address.
-    int closestLibraryIndex = -1;
-    int index = 0;
-    
+    Entity closestLibrary = null;
 
     for (Entity library : libraries) {
       int timeFromAddressToLibrary = pathFinder.getTimeBetweenPoints(address,
-          new LibraryPoint((double) library.getProperty("libraryLatitude"), (double) library.getProperty("libraryLongitude"),
-              ((Number)library.getProperty("libraryId")).intValue()));
+          new LibraryPoint((double) library.getProperty(OrderProperty.LIBRARY_LAT.label), (double) library.getProperty(OrderProperty.LIBRARY_LNG.label),
+              ((Number)library.getProperty(OrderProperty.LIBRARY_ID.label)).intValue()));
 
       if (timeFromAddressToLibrary < minTimeFromAddressToLibrary) {
         minTimeFromAddressToLibrary = timeFromAddressToLibrary;
-
-        closestLibraryIndex = index;
+        closestLibrary = library;
       }
-      ++ index;
     }
-
-    if (closestLibraryIndex != -1) {
-      return libraries.get(closestLibraryIndex);
-    } else {
-      return null;
-    }
+    return closestLibrary;
   }
 }
