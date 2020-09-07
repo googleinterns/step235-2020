@@ -12,6 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+<<<<<<< HEAD
+=======
+
+//package com.google.sps;
+>>>>>>> 740dc59... add test to check that servlet shows the delivery slot page when the user made a valid request
 package com.google.sps.servlets;
 
 import com.google.appengine.api.datastore.DatastoreService;
@@ -21,8 +26,11 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+<<<<<<< HEAD
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.sps.data.FirebaseAuthentication;
+=======
+>>>>>>> 740dc59... add test to check that servlet shows the delivery slot page when the user made a valid request
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
