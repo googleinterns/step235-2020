@@ -15,7 +15,7 @@
 /**
  * Common methods for both the app page.
  */
-var APIKey = "AIzaSyBQJxV5ttrDZxRNxyYwgdPlHDW4C9ys2oI";
+var APIKey = "";
 
 /**
  * Add menu when DOM is loaded.
@@ -109,34 +109,76 @@ async function displayCurrentAddress() {
   });
 }
 
-function updateAddressFromGeolocation(checkboxId) {
-  addressBox = document.getElementById("start-address");
-  if (document.getElementById(checkboxId).checked == false) {
-    // the user will have to set the address himself so clear the address box
-    addressBox.value = ""; 
-  } else {
+/**
+ * If checkboxId element is checked, the function will update the address box addressId to user's
+ * current address so that user can check its location accuracy.
+ */
+function updateAddressFromGeolocation(checkboxId, addressId) {
+  addressBox = document.getElementById(addressId);
+  if (document.getElementById(checkboxId).checked) {
     // update the address box to show the address found using Geolocation
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(setAddress);
+        // if location was retrieved successfully, call setLatLng, else alert in geolocationError
+        getLocation().then((position) => {
+          setLatLng(position);
+          getAddressFromLatLng(addressId)
+        }).catch((error) => geolocationError(error));
     } else {
+      // clear the address box if location is not supported 
       addressBox.value = ""; 
       alert("Geolocation is not supported by this browser!");
     }
   }
 }
 
-function setAddress(position) {
-  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${position.coords.latitude},${position.coords.longitude}&key=${APIKey}`;
+function getLocation() {
+  // getCurrentPosition immediately returns when called; then asynchronously attempts to
+  // obtain the current location of the device;
+  return new Promise(function(resolve, reject) {
+          navigator.geolocation.getCurrentPosition(resolve, reject);
+  });
+}
+
+/**
+ * Alerts user about the error message.
+ */
+function geolocationError(error) {
+  switch(error.code) {
+    case error.PERMISSION_DENIED:
+      alert("Please allow access to your location!");
+      break;
+    case error.POSITION_UNAVAILABLE:
+      alert("Location information is unavailable!");
+      break;
+    case error.UNKNOWN_ERROR:
+      alert("Error occured!");
+      break;
+  }
+}
+
+/**
+ * Sets latitude and longitude elements to user's coordinates using Geolocation API 
+ */
+function setLatLng(position) {
+  document.getElementById('latitude').value = position.coords.latitude;
+  document.getElementById('longitude').value = position.coords.longitude;
+}
+
+/**
+ * Returns user's address using reverse geocoding on latitude and longitude elements
+ */
+function getAddressFromLatLng(addressId) {
+  addressBox = document.getElementById(addressId);
+  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById("latitude").value},${document.getElementById("longitude").value}&key=${APIKey}`;
   fetch(geocodingUrl).then(response => response.json()).then((result) => {
-    // return the best address found using position latitude and longitude
-    document.getElementById('start-address').value = result.results[0].formatted_address;
+    // return the best address found 
+    addressBox.value = result.results[0].formatted_address;
   });
 }
 
 /**
  * Method that builds for every page with a "menu-container div" a navigable menu.
  */
-
 async function addMenu() {
   const menuElement = document.getElementsByClassName('menu-container')[0];
   const header = document.createElement('h3');

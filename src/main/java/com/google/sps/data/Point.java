@@ -16,15 +16,18 @@ package com.google.sps.data;
 import com.google.maps.model.LatLng;
 import com.google.sps.data.MapsRequest;
 
+/**
+ * Class that represents points on the map using latitude and longitude coordinates.
+ */
 public class Point {
   public double latitude;
   public double longitude;
   public Point(String address) {
     LatLng point = MapsRequest.getLocationFromAddress(address);
     if (point == null) {
-      // set default values if request to GeocodingAPI failed
-      latitude = -1;
-      longitude = -1;
+      // set invalid values if request to GeocodingAPI failed
+      latitude = -91;
+      longitude = -91;
     } else {
       latitude = point.lat;
       longitude = point.lng;
