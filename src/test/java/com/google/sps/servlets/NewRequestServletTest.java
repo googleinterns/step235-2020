@@ -21,7 +21,11 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.maps.errors.ApiException;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.sps.data.BadRequestException;
+import com.google.sps.data.DataNotFoundException;
+import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -30,8 +34,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.junit.Test;
@@ -75,6 +81,8 @@ public final class NewRequestServletTest {
     helper.setUp();
     // initialize Mock objects
     MockitoAnnotations.initMocks(this);
+    idToken = "idToken0";
+    userId = "user0";
   }
 
   @After
@@ -87,14 +95,17 @@ public final class NewRequestServletTest {
    * HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testPastDeliveryDate() throws IOException, ServletException {
+  public void testPastDeliveryDate() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn(idToken);
     when(request.getParameter("delivery-date")).thenReturn("2020-08-10");
-    when(request.getParameter("start-time")).thenReturn("05:5");
+    when(request.getParameter("start-time")).thenReturn("05:05");
     when(request.getParameter("end-time")).thenReturn("05:10");
     when(request.getParameter("max-stops")).thenReturn("1");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    when(firebaseAuth.getUserIdFromIdToken(idToken)).thenReturn(userId);
+    requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
 
     verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
@@ -105,7 +116,8 @@ public final class NewRequestServletTest {
    * send HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testStartTimeAfterEndTime() throws IOException, ServletException {
+  public void testInvalidRequest() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn(idToken);
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("05:10");
@@ -113,6 +125,8 @@ public final class NewRequestServletTest {
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    requestServlet.setFirebaseAuth(firebaseAuth);
+    when(firebaseAuth.getUserIdFromIdToken(idToken)).thenReturn(userId);
     requestServlet.doPost(request, response);
     // the date is valid, thus "Please enter a valid date!" shouldn't be sent
     verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
@@ -133,10 +147,8 @@ public final class NewRequestServletTest {
     when(response.getWriter()).thenReturn(new PrintWriter(System.out));
 
     NewRequestServlet requestServlet = spy(new NewRequestServlet());
-
     when(request.getParameter("idToken")).thenReturn("idToken0");
     when(firebaseAuth.getUserIdFromIdToken("idToken0")).thenReturn("user0");
-    
     requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
 
@@ -147,5 +159,28 @@ public final class NewRequestServletTest {
     assertEquals(1, ds.prepare(userQuery).countEntities(FetchOptions.Builder.withLimit(10)));
     // TODO[ak47na]: update test to check that the delivery request is added to datastore after 
     // NewRequestServlet.java is refactored.
+  }
+
+  @Test
+  public void testCreateSlotSuccessfully() throws ApiException, IOException, InterruptedException, ServletException, BadRequestException, DataNotFoundException {
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    slotManager.createSlot("2020-09-26", "180", "05:15", "15:10", "1", "user0");
+    slotManager.setSlotStartingPoint("277 Bedford Ave, Brooklyn, NY 11211, USA");
+    slotManager.addSlotToDatastore();
+    // Query datastore and verify that the request is added.
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    Query deliveryRequestQuery = new Query("deliveryRequest")
+          .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, "user0"));
+    assertEquals(1, ds.prepare(deliveryRequestQuery).countEntities(FetchOptions.Builder.withLimit(1)));
+  }
+
+  @Rule
+  public ExpectedException thrown = ExpectedException.none();
+
+  @Test
+  public void testCreateSlotInvalidDate() throws IOException, ServletException, BadRequestException {
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    thrown.expect(BadRequestException.class);
+	slotManager.createSlot("2020-09-26", "180", "05:15", "05:00", "1", "user0");
   }
 }

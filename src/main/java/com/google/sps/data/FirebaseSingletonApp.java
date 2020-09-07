@@ -17,7 +17,6 @@ public class FirebaseSingletonApp {
   /**
    * Initialize firebase SDK and return the FirebaseApp object
    */
-
   private static FirebaseApp initialize() throws IOException {
     FirebaseOptions options = new FirebaseOptions.Builder()
         .setCredentials(GoogleCredentials.getApplicationDefault())
