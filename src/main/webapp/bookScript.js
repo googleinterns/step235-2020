@@ -38,10 +38,11 @@ function getRequestedURL(API_KEY) {
   const title = document.getElementById('title');
   const author = document.getElementById('author');
   const isbn = document.getElementById('isbn');
-  return processURL(title.value, author.value, isbn.value, API_KEY);
+  const MAX_RESULTS = 30;
+  return processURL(title.value, author.value, isbn.value, API_KEY, MAX_RESULTS);
 }
 
-function processURL(title, author, isbn, API_KEY) {
+function processURL(title, author, isbn, API_KEY, MAX_RESULTS) {
   // To get results from UK publishing houses.
   const COUNTRY = 'UK';
   // Cannot display results for empty search queries.
@@ -70,6 +71,8 @@ function processURL(title, author, isbn, API_KEY) {
   }
   // Set COUNTRY code.
   url += `&country=${COUNTRY}`;
+  // Set how many books should be displayed.
+  url += `&maxResults=${MAX_RESULTS}`;
   url += `&key=${API_KEY}`;
   return url;
 }

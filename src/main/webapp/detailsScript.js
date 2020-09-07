@@ -59,7 +59,7 @@ function displayDetails(bookJSON) {
   document.getElementById('page-count').innerText =
     `Page count: ${volumeInfo.pageCount}`;
   document.getElementById('description').innerText =
-    volumeInfo.description.replaceAll('<br>', '');
+    volumeInfo.description.replace(/(<([^>]+)>)/gi, '');
   document.getElementById('identifiers').innerText =
     getStringIdentifiers(volumeInfo.industryIdentifiers);
 }

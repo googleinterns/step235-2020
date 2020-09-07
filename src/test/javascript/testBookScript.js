@@ -8,30 +8,30 @@ describe('Testing bookScript.js - processURL', () => {
     let title = 'Title';
     let author = 'Author';
     let isbn = null;
-    let url = 'https://www.googleapis.com/books/v1/volumes?q=intitle:Title+inauthor:Author&country=UK&key=xyz';
-    expect(processURL(title, author, isbn, apiKey)).toEqual(url);
+    let url = 'https://www.googleapis.com/books/v1/volumes?q=intitle:Title+inauthor:Author&country=UK&maxResults=20&key=xyz';
+    expect(processURL(title, author, isbn, apiKey, 20)).toEqual(url);
   })
 
   it('test if it parses the correct URL when only isbn is set', () => {
     let title = null;
     let author = null;
     let isbn = '12345';
-    let url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:12345&country=UK&key=xyz';
-    expect(processURL(title, author, isbn, apiKey)).toEqual(url);
+    let url = 'https://www.googleapis.com/books/v1/volumes?q=isbn:12345&country=UK&maxResults=20&key=xyz';
+    expect(processURL(title, author, isbn, apiKey, 20)).toEqual(url);
   })
 
   it('test if it parses the correct URL when author and title and isbn are set', () => {
     let title = 'Title';
     let author = 'Author';
     let isbn = '12345';
-    expect(processURL(title, author, isbn, apiKey)).toEqual('');
+    expect(processURL(title, author, isbn, apiKey, 20)).toEqual('');
   })
 
   it('test if it parses the correct URL when nothing is set', () => {
     let title = null;
     let author = null;
     let isbn = null;
-    expect(processURL(title, author, isbn, apiKey)).toEqual('');
+    expect(processURL(title, author, isbn, apiKey, 20)).toEqual('');
   })
 
 })
