@@ -73,7 +73,7 @@ public class NewRequestServlet extends HttpServlet {
   public void setFirebaseAuth(FirebaseAuthentication firebaseAuth) {
     this.firebaseAuth = firebaseAuth;
   }
-  
+
   /**
    * The function handles POST requests sent by delivery-form in deliveryRequest.html 
    */
@@ -90,10 +90,14 @@ public class NewRequestServlet extends HttpServlet {
 
     DeliverySlotManager slotManager = new DeliverySlotManager();
     try {
-      // get the idToken from hidden input field 
-      uid = firebaseAuth.getUserIdFromIdToken(request.getParameter("idToken"));
-    } catch (FirebaseAuthException e) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid idToken");
+      slotManager.createSlot(request.getParameter("delivery-date"),
+          request.getParameter("timezone-offset-minutes"),
+          request.getParameter("start-time"),
+          request.getParameter("end-time"),
+          request.getParameter("max-stops"),
+          userId);
+    } catch (BadRequestException e) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
       return;
     }
     addDeliveryRequestResponse(slotManager.getDeliverySlot(), request, response);
@@ -108,7 +112,7 @@ public class NewRequestServlet extends HttpServlet {
       // or future delivery requests and couriers
       slotManager.addSlotToDatastore();
     }
-    addDeliveryRequestResponse(deliverySlot, request, response);
+
   }
 
   protected void addDeliveryRequestResponse(DeliverySlot deliverySlot, HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -130,7 +134,7 @@ public class NewRequestServlet extends HttpServlet {
     // addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
   }
 
-  /** 
+  /**
    * If this is the first time the user makes a delivery request, he will be marked in
    * the data store as a courier to be able to view "See journeys" page.  
    */
