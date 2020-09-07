@@ -35,6 +35,13 @@
       <input type="time" id="end-time" name="end-time">
       <label for="max-stops"><p>Choose the maximum number of stops: The value must be at most 25.<p></label>
       <input type="number" id="max-stops" name="max-stops" value="25">
+
+      <label for="start-address"><p>Write the start address of the delivery journey.<p></label>
+      <textarea id="start-address" name="start-address" rows="4" cols="40"></textarea>
+      <input type="hidden" name="latitude" id="latitude"/>
+      <input type="hidden" name="longitude" id="longitude"/>
+      <label for="use-current-address"><p>Use the address detected from your location.<p></label>
+      <input type="checkbox" id="use-current-address" name="use-current-address" onchange="updateAddressFromGeolocation('use-current-address', 'start-address')">
       <input type="hidden" name="idToken" id="idToken"/>
       <input type="hidden" name="timezone-offset" id="timezone-offset"/>
       <input type="submit" value="Send Request" >
