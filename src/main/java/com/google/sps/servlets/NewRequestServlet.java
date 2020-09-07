@@ -30,10 +30,11 @@ import com.google.maps.GeoApiContext.Builder;
 import com.google.maps.GeocodingApi;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.LatLng;
-import com.google.sps.data.Point;
+import com.google.sps.data.DeliverySlot;
 import com.google.sps.data.MapsRequest;
 import java.io.IOException;
 import java.lang.Double;
+import java.lang.Thread;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -120,16 +121,25 @@ public class NewRequestServlet extends HttpServlet {
       LatLng point = null;
       try {
         point = MapsRequest.getLocationFromAddress(request.getParameter("address"));
-      } catch (Exception e) {
-        // Exception can be ApiException, IOException, InterruptedException
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+      } catch (ApiException e) {
+        // request to Geocoding API failed
+        response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE, e.getMessage());
         return ;
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new RuntimeException(e);
+      }
+      if (point == null) {
+        // Geocoding API didn't find the coordinates corresponding to given address
+        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid address!");
       }
       lat = point.lat;
       lng = point.lng;
     }
 
-    // initialize firebase app 
+    DeliverySlot deliverySlot = new DeliverySlot(deliveryDay, startTimeSeconds, endTimeSeconds);
+    
+    //initialize firebase app 
     FirebaseApp defaultApp = initializeFirebaseApp();
     //check the name of defaultApp to make sure that the correct app is connected
     System.out.println(defaultApp.getName());
@@ -147,23 +157,31 @@ public class NewRequestServlet extends HttpServlet {
     
     if (deliveryDay.compareTo(currentDay) == 0) {
       // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
-      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid, lat, lng);
+      processDeliveryRequest(deliverySlot, maxStops, uid, lat, lng);
     } else {
     // the delivery request is added to datastore and processed the day before deliveryDay
     // delayed processing optimizes the order matching algorithm by taking into account other
     // or future delivery requests and couriers
-    DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-      deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid, lat, lng
-    ));
+      DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
+        deliverySlot, maxStops, uid, lat, lng
+      ));
     }
-    response.sendRedirect("/loggedIn.html");
+    addDeliveryRequestResponse(deliverySlot, request, response);
+  }
+
+  private void addDeliveryRequestResponse(DeliverySlot deliverySlot, HttpServletRequest request, HttpServletResponse response) throws IOException {
+    Gson gson = new Gson();
+    String json = gson.toJson(deliverySlot);
+    response.setContentType("application/json;");
+    System.out.println(json);
+    response.getWriter().println(json);
   }
 
   /** 
    * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
    * delivery journey for the orders and adds it to user's journeys.
    */
-  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId, Double startLat, Double startLng) {
+  private void processDeliveryRequest(DeliverySlot deliverySlot, int maxStops, String userId, Double startLat, Double startLng) {
     // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
     // the stops the courier must make; the Waypoint objects provide information such as the books 
     // that should be taken/delivered
@@ -200,12 +218,12 @@ public class NewRequestServlet extends HttpServlet {
   /**
    * create a deliveryRequest Entity and store it in the datastore.
    */
-  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId, Double startLat, Double startLng) {
+  private Entity createDeliveryRequestEntity(DeliverySlot deliverySlot, int maxStops, String userId, Double startLat, Double startLng) {
     Entity deliveryRequest = new Entity("deliveryRequest");
     
-    deliveryRequest.setProperty("deliveryDay", deliveryDay);
-    deliveryRequest.setProperty("startTime", startTime);
-    deliveryRequest.setProperty("endTime", endTime);
+    deliveryRequest.setProperty("deliveryDay", deliverySlot.getDeliveryDay());
+    deliveryRequest.setProperty("startTime", deliverySlot.getStartTime());
+    deliveryRequest.setProperty("endTime", deliverySlot.getEndTime());
     deliveryRequest.setProperty("userId", userId);
     deliveryRequest.setProperty("startLat", startLat);
     deliveryRequest.setProperty("startLng", startLng);
