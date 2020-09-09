@@ -129,14 +129,19 @@ async function addMenu() {
   bookshelves.innerText = 'See your bookshelves';
   bookshelves.href = 'bookshelves.html';
   menuElement.append(bookshelves);
+  const courier_header = document.createElement('h3');
+  courier_header.setAttribute('id', 'courier-header');
+  courier_header.innerText = 'BECOME A COURIER';
+  menuElement.append(courier_header);
   const delivery_request = document.createElement('a');
-  delivery_request.innerText = 'Request a delivery!';
+  delivery_request.innerText = 'Request a delivery slot!';
   delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
   let idToken = await getIdToken();
   fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
     if (userInfo.isCourier === true) {
+      courier_header.innerText = 'COURIER SECTION';
       // Only display this page for users that are set in the database as couriers.
       see_journeys.innerText = 'See journeys';
       see_journeys.href = 'journeys.html';

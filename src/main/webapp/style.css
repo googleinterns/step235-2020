@@ -26,6 +26,12 @@ p, label {
   width: 900px;
 }
 
+#logo {
+  text-shadow: 4px 4px 8px #5dc8e8;
+  font-size: 40px;
+  text-align: center;
+}
+
 .details-wrapper {
   margin-left: auto;
   margin-right: auto;
@@ -74,6 +80,7 @@ p, label {
 }
 
 #details-container {
+  overflow: scroll;
   padding: 30px;
   float: right;
   width: 470px;
@@ -173,6 +180,10 @@ p, label {
   color: white;
 }
 
+#courier-header {
+  margin-top: 20px;
+}
+
 button, input[type="submit"], input[type="button"] {
   background-color: rgb(0, 102, 204);
   color:white;
@@ -206,6 +217,7 @@ input, textarea {
 }
 
 .book-item {
+  overflow: scroll;
   display: inline-block;
   width: 320px;
   padding: 25px;
