@@ -17,7 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
           fetch(URL).then(response => {
             if (response.status === 200) {
               response.json().then(result => {
-                addBooksGrid(result.items);
+                const bookList = extractBookList(result);
+                if (bookList !== null) {
+                  addBooksGrid(bookList);
+                }
               });
             } else {
               alert(`Error ${response.status}. Please try again.`);
@@ -28,6 +31,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 });
+
+/**
+ * Function that ensures that when the list of books returned by Books API is null,
+ * the app notifies the user.
+ * @param {JSON} response 
+ */
+
+function extractBookList(response) {
+  if (response.hasOwnProperty('items')) {
+    return response.items;
+  } else {
+    alert('No results found. Please try different search queries, ISBN might not exist.')
+    return null;
+  }
+}
 
 /**
  * Reads the fields completed by the user(title, author, ISBN) and computes the URL for the GET request

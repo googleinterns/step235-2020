@@ -53,6 +53,16 @@ describe('Testing detailScript.js - getStringIdentifiers', () => {
   })
 })
 
+describe('Testing bookScript.js - extractBookList', () => {
+  it('returns null when reponse does not have any items', () => {
+    let response = {
+      "kind": "books#volumes",
+      "totalItems": 0
+    };
+    expect(extractBookList(response)).toEqual(null);
+  });
+});
+
 describe('Testing common.js - parseQueryString', () => {
   it('parses query strings', () => {
     const testData = '?param1=value1&param2=value2';
