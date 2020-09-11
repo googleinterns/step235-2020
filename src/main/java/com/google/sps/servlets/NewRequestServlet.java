@@ -17,13 +17,35 @@ package com.google.sps.servlets;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
-import com.google.sps.data.FirebaseSingletonApp;
-import com.google.firebase.auth.*;
+import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.FirebaseApp;
+import com.google.firebase.FirebaseOptions;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.maps.errors.ApiException;
+import com.google.maps.GeoApiContext;
+import com.google.maps.GeoApiContext.Builder;
+import com.google.maps.GeocodingApi;
+import com.google.maps.model.GeocodingResult;
+import com.google.maps.model.LatLng;
+import com.google.sps.data.DeliverySystem;
+import com.google.sps.data.Journey;
+import com.google.sps.data.MapsRequest;
+import com.google.sps.data.Point;
+import com.google.sps.data.DataNotFoundException;
+import com.google.sps.data.BadRequestException;
+import com.google.sps.data.DeliverySlot;
+import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
+import com.google.sps.data.FirebaseSingletonApp;
+import com.google.sps.data.JourneyHandler;
+import com.google.sps.data.MapsRequest;
 import java.io.IOException;
+import java.lang.Double;
+import java.lang.Thread;
 import java.nio.charset.StandardCharsets;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -31,21 +53,44 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.text.ParseException;
-import java.time.format.DateTimeFormatter; 
-import java.time.format.DateTimeParseException; 
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.LocalTime;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Date; 
+import java.util.ArrayList;
+import java.util.Date;
+
+import static java.lang.Double.parseDouble;
+import static java.lang.Integer.parseInt;
+
 
 // TODO[ak47na]: Add helper classes to make the code testable without mocking HttpServletRequest and HttpServletResponse.
 @WebServlet("/new-delivery-request")
 public class NewRequestServlet extends HttpServlet {
+  private static final String dateFormat = "yyyy-MM-dd";
+  private static final String timeFormat = "HH:mm";
   private FirebaseAuthentication firebaseAuth;
-  
+
+  private enum DeliverySlotParameters {
+    DELIVERY_DATE("delivery-date"),
+    TIMEZONE_OFFSET_MINUTES("timezone-offset-minutes"),
+    START_TIME("start-time"),
+    END_TIME("end-time"),
+    LAT("latitude"),
+    LNG("longitude"),
+    START_ADDRESS("start-address");
+
+    public final String label;
+
+    private DeliverySlotParameters(String label) {
+      this.label = label;
+    }
+  }
+
   @Override
   public void init() throws ServletException {
-    // initialize firebase app 
+    // initialize firebase app
     try {
       setFirebaseAuth(new FirebaseAuthentication(FirebaseSingletonApp.getInstance()));
     } catch (IOException e) {
@@ -58,91 +103,92 @@ public class NewRequestServlet extends HttpServlet {
   public void setFirebaseAuth(FirebaseAuthentication firebaseAuth) {
     this.firebaseAuth = firebaseAuth;
   }
-  
+
   /**
-   * The function handles POST requests sent by delivery-form in deliveryRequest.html 
+   * The function handles POST requests sent by delivery-form in deliveryRequest.html
    */
   @Override
   public void doPost(HttpServletRequest request, HttpServletResponse response) throws IOException {
-    
-    Date deliveryDay = parseDate(request.getParameter("delivery-date"));
-
-    // get the currentDate to check that deliveryDay is not set for a past date
-    Date currentDay = new Date(System.currentTimeMillis());
-    if (deliveryDay == null || deliveryDay.compareTo(currentDay) < 0) {
-      // Send a HTTP 400 Bad Request response if user provided an invalid date.
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
-      return ;
-    }
-
-    // get the timezone offset from the current request in seconds
-    int timezoneOffset = parseNumber(request.getParameter("timezone-offset")) * 60;
-    
-    LocalTime startTime = parseTime(request.getParameter("start-time"));
-    LocalTime endTime = parseTime(request.getParameter("end-time"));    
-
-    if (startTime == null || endTime == null || startTime.compareTo(endTime) > 0) {
-      // Send a HTTP 400 Bad Request response if user provided an invalid time.
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid time!");
-      return ;
-    }
-    // convert startTime and endTime to seconds and add the timezoneOffset 
-    int startTimeSeconds = getNumberOfSeconds(startTime) + timezoneOffset;
-    int endTimeSeconds = getNumberOfSeconds(endTime) + timezoneOffset;
-
-    if (deliveryDay.getTime() + (getNumberOfSeconds(startTime) + timezoneOffset) * 1000 < currentDay.getTime()) {
-      // Send a HTTP 400 Bad Request response if user provided a time in the past.
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a time in the future!");
-      return ;
-    }
-    
-    int maxStops = parseNumber(request.getParameter("max-stops"));
-    if (maxStops <= 0 || maxStops > 25) {
-      // Send a HTTP 400 Bad Request response if user provided an invalid number of stops.
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter between 1 and 25 stops!");
-      return ;
-    }
-    
-    String uid = null;
+    String userId = null;
     try {
-      // get the idToken from hidden input field 
-      uid = firebaseAuth.getUserIdFromIdToken(request.getParameter("idToken"));
+      // get the idToken from hidden input field
+      userId = firebaseAuth.getUserIdFromIdToken(request.getParameter("idToken"));
     } catch (FirebaseAuthException e) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Invalid idToken");
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+      return;
+    }
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    DeliverySlot deliverySlot = null;
+    try {
+      // Get the delivery slot details as parameters from the form in deliveryRequest.html.
+      long timezoneOffsetMiliseconds = parseInt(request.getParameter(DeliverySlotParameters.TIMEZONE_OFFSET_MINUTES.label)) * 60000;
+      DateTimeFormatter timeFormatter = DateTimeFormatter.ofPattern(timeFormat);
+      long startTimeInMiliseconds = LocalTime.parse(request.getParameter(DeliverySlotParameters.START_TIME.label), timeFormatter)
+          .toNanoOfDay() / 1000000 + timezoneOffsetMiliseconds;
+      long endTimeInMiliseconds = LocalTime.parse(request.getParameter(DeliverySlotParameters.END_TIME.label), timeFormatter)
+          .toNanoOfDay() / 1000000 + timezoneOffsetMiliseconds;
+      SimpleDateFormat dateFormatter = new SimpleDateFormat(dateFormat);
+      Date deliveryDate = dateFormatter.parse(request.getParameter(DeliverySlotParameters.DELIVERY_DATE.label));
+      deliverySlot = new DeliverySlot(deliveryDate,
+          startTimeInMiliseconds,
+          endTimeInMiliseconds,
+          userId);
+      if (request.getParameter(DeliverySlotParameters.LAT.label) == null ||
+          request.getParameter(DeliverySlotParameters.LNG.label) == null) {
+        // the user has set the address himself
+        deliverySlot.setStartPoint(request.getParameter(DeliverySlotParameters.START_ADDRESS.label));
+      } else {
+        // the starting point is the current location of the user
+        deliverySlot.setStartPoint(parseDouble(request.getParameter(DeliverySlotParameters.LAT.label)),
+            parseDouble(request.getParameter(DeliverySlotParameters.LNG.label)));
+      }
+    } catch (BadRequestException | NumberFormatException | ParseException e) {
+      response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.getMessage());
+      return;
+    } catch (DataNotFoundException e) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+      return;
+    } catch (Exception e) {
+      // Send server error for ApiException or InterruptedException.
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
+      return;
+    }
+    slotManager.createDeliverySlot(deliverySlot);
+    markUserAsCourier(userId);
+    JourneyHandler journeyHandler = new JourneyHandler();
+
+    try {
+      // Create journey for deliverySlot and add it to datastore.
+      journeyHandler.processDeliveryRequest(deliverySlot);
+    } catch (ApiException | InterruptedException e) {
+      response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
       return;
     }
 
-    markUserAsCourier(uid);
-    if (deliveryDay.compareTo(currentDay) == 0) {
-      // if the delivery request is not sent with at least one day in advance, then procees it as soon as possible
-      processDeliveryRequest(deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid);
-    } else {
-      // the delivery request is added to datastore and processed the day before deliveryDay
-      // delayed processing optimizes the order matching algorithm by taking into account other
-      // or future delivery requests and couriers
-      DatastoreServiceFactory.getDatastoreService().put(createDeliveryRequestEntity(
-        deliveryDay, startTimeSeconds, endTimeSeconds, maxStops, uid
-      ));
+    try {
+      // Display the newly created delivery slot request to the user.
+      printDeliveryRequestSlotToJSON(deliverySlot, response);
+    } catch (Exception e) {
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+      return;
     }
-    response.sendRedirect("/loggedIn.html");
   }
 
-  /** 
-   * Finds a set of orders that can be solved by the current delivery request, creates an optimal 
-   * delivery journey for the orders and adds it to user's journeys.
+  /**
+   * Displays the deliverySlotRequest as a JSON string on page "/new-delivery-request".
    */
-  private void processDeliveryRequest(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
-    // findOrdersForDeliveryRequest(); will return an arrayList of Waypoint objects representing
-    // the stops the courier must make; the Waypoint objects provide information such as the books 
-    // that should be taken/delivered
-    // addDeliveryJourney(MatchingSystem.findOrdersForDeliveryRequest());
+  private void printDeliveryRequestSlotToJSON(DeliverySlot deliverySlotRequest, HttpServletResponse response) throws IOException {
+    Gson gson = new Gson();
+    String json = gson.toJson(deliverySlotRequest);
+    response.setContentType("application/json;");
+
+    response.getWriter().println(json);
   }
 
-  /** 
+  /**
    * If this is the first time the user makes a delivery request, he will be marked in
-   * the data store as a courier to be able to view "See journeys" page.  
+   * the data store as a courier to be able to view "See journeys" page.
    */
-
   private void markUserAsCourier(String uid) {
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     Entity userEntity;
@@ -163,65 +209,5 @@ public class NewRequestServlet extends HttpServlet {
     }
     userEntity.setProperty("isCourier", "true");
     datastore.put(userEntity);
-  }
-
-  /**
-   * create a deliveryRequest Entity and store it in the datastore.
-   */
-  private Entity createDeliveryRequestEntity(Date deliveryDay, int startTime, int endTime, int maxStops, String userId) {
-    Entity deliveryRequest = new Entity("deliveryRequest");
-    
-    deliveryRequest.setProperty("deliveryDay", deliveryDay);
-    deliveryRequest.setProperty("startTime", startTime);
-    deliveryRequest.setProperty("endTime", endTime);
-    deliveryRequest.setProperty("userId", userId);
-   
-    return deliveryRequest;
-  }
-
-  private int getNumberOfSeconds(LocalTime time) {
-    return time.getHour() * 3600 + time.getMinute() * 60; 
-  }
-
-  /**
-   * Return a Date object from dateString.
-   */
-  private Date parseDate(String dateString) {
-    SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
-    Date date = null;
-    try {
-      date = formatter.parse(dateString);
-    } catch (ParseException e) {
-      // Send a HTTP 400 Bad Request response if user provided an invalid date.
-      return null;
-    }
-    return date;
-  }
-
-  /**
-   * Returns the integer value of numberString
-   */
-  private int parseNumber(String numberString) {
-    Integer number = null;
-    try {
-      number = Integer.parseInt(numberString);
-    } catch (NumberFormatException e) {
-      return -1;
-    }
-    return number;
-  }
-
-  /**
-   * Returns LocalTime object from timeString
-   */
-  private LocalTime parseTime(String timeString) {
-    LocalTime time = null;
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm");
-    try {
-      time = LocalTime.parse(timeString, formatter);
-    } catch (DateTimeParseException e) {
-      return null;
-    }
-    return time;
   }
 }

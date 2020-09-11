@@ -21,8 +21,13 @@ import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Query;
 import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestConfig;
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
+import com.google.maps.errors.ApiException;
 import com.google.firebase.auth.FirebaseAuthException;
+import com.google.sps.data.BadRequestException;
+import com.google.sps.data.DataNotFoundException;
+import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
+import java.util.List;
 import java.io.IOException;
 import java.io.PrintWriter;
 import javax.servlet.ServletException;
@@ -30,8 +35,10 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.After;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.junit.Test;
@@ -87,14 +94,16 @@ public final class NewRequestServletTest {
    * HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testPastDeliveryDate() throws IOException, ServletException {
+  public void testPastDeliveryDate() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn("idToken0");
     when(request.getParameter("delivery-date")).thenReturn("2020-08-10");
-    when(request.getParameter("start-time")).thenReturn("05:5");
+    when(request.getParameter("start-time")).thenReturn("05:05");
     when(request.getParameter("end-time")).thenReturn("05:10");
-    when(request.getParameter("max-stops")).thenReturn("1");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    when(firebaseAuth.getUserIdFromIdToken("idToken0")).thenReturn("user0");
+    requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
 
     verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
@@ -105,38 +114,38 @@ public final class NewRequestServletTest {
    * send HttpServletResponse.SC_BAD_REQUEST
    */
   @Test
-  public void testStartTimeAfterEndTime() throws IOException, ServletException {
+  public void testInvalidRequest() throws IOException, ServletException, FirebaseAuthException {
+    when(request.getParameter("idToken")).thenReturn("idToken0");
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("05:10");
-    when(request.getParameter("max-stops")).thenReturn("1");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
 
     NewRequestServlet requestServlet = new NewRequestServlet();
+    requestServlet.setFirebaseAuth(firebaseAuth);
+    when(firebaseAuth.getUserIdFromIdToken("idToken0")).thenReturn("user0");
     requestServlet.doPost(request, response);
     // the date is valid, thus "Please enter a valid date!" shouldn't be sent
     verify(response, times(0)).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid date!");
     verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST, "Please enter a valid time!");
   }
+
   /**
    * Tests that when correct data is sent to the servlet, no BAD_REQUEST errors are sent. 
    */
-  @Test
+  @Test(expected = UnsupportedOperationException.class)
   public void testNewRequestsAutomaticallyCreatesCourierProfile() throws IOException, ServletException, FirebaseAuthException {
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("15:10");
-    when(request.getParameter("max-stops")).thenReturn("1");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");
-    when(request.getParameter("start-address")).thenReturn("277 Bedford Ave, Brooklyn, NY 11211, USA");
-
+    when(request.getParameter("latitude")).thenReturn("0");
+    when(request.getParameter("longitude")).thenReturn("0");
     when(response.getWriter()).thenReturn(new PrintWriter(System.out));
 
     NewRequestServlet requestServlet = spy(new NewRequestServlet());
-
     when(request.getParameter("idToken")).thenReturn("idToken0");
     when(firebaseAuth.getUserIdFromIdToken("idToken0")).thenReturn("user0");
-    
     requestServlet.setFirebaseAuth(firebaseAuth);
     requestServlet.doPost(request, response);
 
