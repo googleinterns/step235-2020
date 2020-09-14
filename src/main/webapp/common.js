@@ -117,30 +117,49 @@ async function displayCurrentAddress() {
  * longitude input elements will be disabled.
  */
 function updateStartAddress(geolocationButtonId, addressId) {
-  if (document.getElementById(geolocationButtonId).checked) {
-    // update the address box to show the address found using Geolocation
-    if (navigator.geolocation) {
-        // if location was retrieved successfully, call setLatLng, else alert in geolocationError
-        getLocation().then((position) => {
-          setLatLng(position);
-          getAddressFromLatLng(addressId)
-        }).catch((error) => geolocationError(error));
-    } else {
-      // clear the address box if location is not supported 
-      document.getElementById(addressId).value = ''; 
-      alert('Geolocation is not supported by this browser!');
-    }
+  geolocationButton = document.getElementById(geolocationButtonId);
+  addressBox = document.getElementById(addressId);
+  if (geolocationButton.checked) {
+    updateAddressBoxUsingGeolocation(addressBox);
   } else {
-    // clear the address box to allow the user to set it.
-    document.getElementById(addressId).value = ''; 
-    document.getElementById('latitude').disabled = true; 
-    document.getElementById('longitude').disabled = true; 
+    // Allow the user to set the address.
+    addressBox.value = ''; 
+    disableCoordinates(document.getElementById('latitude'),
+      document.getElementById('longitude'));
   }
 }
 
+/**
+ * Disables latitude and longitude hidden input elements.
+ */
+function disableCoordinates(latElem, lngElem) {
+  latElem.disabled = true;
+  lngElem.disabled = true;
+}
+
+/**
+ * Updates the address box to show the address found using Geolocation.
+ */
+async function updateAddressBoxUsingGeolocation(addressBox) {
+  if (navigator.geolocation) {
+    // If location was retrieved successfully, call setLatLng, else alert in geolocationError.
+    getLocation().then((position) => {
+      setLatLng(position);
+      getAddressFromLatLng(addressBox);
+    }).catch((error) => geolocationError(error));
+  } else {
+    // Clear the address box if Geolocation is not supported. 
+    addressBox.value = ''; 
+    alert('Geolocation is not supported by this browser!');
+  }
+}
+
+/**
+ * Returns a promise that resolves with user's coordinates and rejects if geolocation fails.
+ */
 function getLocation() {
-  // getCurrentPosition immediately returns when called; then asynchronously attempts to
-  // obtain the current location of the device;
+  // GetCurrentPosition immediately returns when called; then asynchronously attempts to
+  // obtain the current location of the device.
   return new Promise(function(resolve, reject) {
           navigator.geolocation.getCurrentPosition(resolve, reject);
   });
@@ -174,18 +193,21 @@ function setLatLng(position) {
 /**
  * Returns user's address using reverse geocoding on latitude and longitude elements
  */
-function getAddressFromLatLng(addressId) {
-  addressBox = document.getElementById(addressId);
-  geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById('latitude').value},${document.getElementById('longitude').value}&key=${GoogleMapsApiKey}`;
-  fetch(geocodingUrl).then(response => response.json()).then((result) => {
-    
-    if (result.status != 'OK') {
-      // there was an error when getting the address from the coordinates
-      alert('Location information is unavailable!');
-    } else {
-      // return the best address found 
-      addressBox.value = result.results[0].formatted_address;
-    }
+function getAddressFromLatLng(addressBox) {
+  // Obtain GoogleMapsApiKey from local file.
+  fetch('apiKey.json').then(response => response.json()).then(jsonResponse => {
+    GoogleMapsApiKey = jsonResponse.apiKey;
+    geocodingUrl = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${document.getElementById('latitude').value},${document.getElementById('longitude').value}&key=${GoogleMapsApiKey}`;
+    fetch(geocodingUrl).then(response => response.json()).then((result) => {
+      if (result.status != 'OK') {
+        // there was an error when getting the address from the coordinates
+        alert('Location information is unavailable!');
+        addressBox.value = '';
+      } else {
+        // return the best address found 
+        addressBox.value = result.results[0].formatted_address;
+      }
+    });
   });
 }
 
