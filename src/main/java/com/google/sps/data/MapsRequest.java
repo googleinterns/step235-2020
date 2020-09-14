@@ -65,7 +65,7 @@ public class MapsRequest {
    * TODO[ak47na]: update function to get the duration if the journey starts at a given time.
    * TODO[ak47na]: add function parameter to support multiple transportation modes.
    */
-  public int getTimeInSecondsBetween2Points(Point a, Point b) throws ApiException, IOException, InterruptedException, DataNotFoundException{
+  public static int getTimeInSecondsBetween2Points(Point a, Point b) throws ApiException, IOException, InterruptedException, DataNotFoundException{
     DirectionsResult result = DirectionsApi.newRequest(getGeoApiContext())
         .origin(new LatLng(a.latitude, a.longitude))
         .destination(new LatLng(b.latitude, b.longitude))

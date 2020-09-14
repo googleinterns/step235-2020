@@ -63,4 +63,12 @@ public class Point {
     int value = (int)(10000.0 * this.latitude) * 90 + (int)(10000.0 * this.longitude);
     return value;
   }
+
+  /**
+   * Returns the area of the point from its latitude and longitude.
+   * TODO[ak47na]: change method to return different areas wrt point coordinates.
+   */
+  public int getArea() {
+    return 1;
+  }
 }

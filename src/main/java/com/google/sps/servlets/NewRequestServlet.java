@@ -156,7 +156,6 @@ public class NewRequestServlet extends HttpServlet {
     slotManager.createDeliverySlot(deliverySlot);
     markUserAsCourier(userId);
     JourneyHandler journeyHandler = new JourneyHandler();
-
     try {
       // Create journey for deliverySlot and add it to datastore.
       journeyHandler.processDeliveryRequest(deliverySlot);

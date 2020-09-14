@@ -111,7 +111,7 @@ public class DeliverySlot {
   public String getSlotId() {
     return slotId;
   }
-
+  
   public double getStartLatitude() {
     return startPoint.latitude;
   }
