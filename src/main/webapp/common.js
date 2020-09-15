@@ -15,9 +15,6 @@
 /**
  * Common methods for both the app page.
  */
- 
-// TODO[ak47na]: fetch API key
-var GoogleMapsApiKey= '';
 
 /**
  * Add menu when DOM is loaded.
@@ -212,6 +209,54 @@ function getAddressFromLatLng(addressBox) {
 }
 
 /**
+ * Fetches user's delivery slots from Java servlet and displayes them on deliverySlots.html page.
+ */
+async function displayDeliverySlots() {
+  let idToken = await getIdToken();
+  fetch(`/new-delivery-request?idToken=${idToken}`).then(response => { 
+    if (response.status != 200) {
+      // There was an error when requesting the delivery slots from the server.
+      throw new Error('Unable to get delivery slots!');
+    } else {
+      return response.json();
+    }
+  }).then(slots => {
+    // Display each delivery slot as a list element.
+    const deliverySlotsContainer = document.getElementById('delivery-slots-container');
+    for (const slot in slots) {
+      deliverySlotElem = createUlElement(`Delivery slot with ID: ${slots[slot].slotId}`);
+      slotTime = createListElement(`Starts at ${slots[slot].startTime} and ends at ${slots[slot].endTime}`);
+      slotAddress = createListElement(`The starting point is ${slots[slot].startPoint}`);
+      // Show the start, end times and starting point of delivery slot as list elements. 
+      // TODO[ak47na]: improve the way delivery slots are shown (e.g. add line breaks between them).
+      deliverySlotElem.appendChild(slotTime);
+      deliverySlotElem.appendChild(slotAddress);
+      deliverySlotsContainer.appendChild(deliverySlotElem);
+    }
+  }).catch(error => {
+    alert(error);
+  });
+}
+
+/** 
+ * Returns HTML list element with text. 
+ */
+function createListElement(text) {
+  const liElement = document.createElement('li');
+  liElement.innerText = text;
+  return liElement;
+}
+
+/** 
+ * Returns HTML ul element with text. 
+ */
+function createUlElement(text) {
+  const ulElement = document.createElement('ul');
+  ulElement.innerText = text;
+  return ulElement;
+}
+
+/**
  * Method that builds for every page with a 'menu-container div' a navigable menu.
  */
 async function addMenu() {
@@ -240,6 +285,7 @@ async function addMenu() {
   delivery_request.href = 'deliveryRequest.html';
   menuElement.append(delivery_request);
   const see_journeys = document.createElement('a');
+  const view_delivery_slots = document.createElement('a');
   let idToken = await getIdToken();
   fetch(`/user-data?idToken=${idToken}`).then(response => response.json()).then(userInfo => {
     if (userInfo.isCourier === true) {
@@ -248,6 +294,10 @@ async function addMenu() {
       see_journeys.innerText = 'See journeys';
       see_journeys.href = 'journeys.html';
       menuElement.append(see_journeys);
+
+      view_delivery_slots.innerText = 'View Delivery Slots';
+      view_delivery_slots.href = 'deliverySlots.html';
+      menuElement.append(view_delivery_slots);
     }
   });
 }

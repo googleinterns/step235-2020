@@ -60,6 +60,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 import static java.lang.Double.parseDouble;
 import static java.lang.Integer.parseInt;
@@ -163,25 +164,40 @@ public class NewRequestServlet extends HttpServlet {
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
       return;
     }
-
-    try {
-      // Display the newly created delivery slot request to the user.
-      printDeliveryRequestSlotToJSON(deliverySlot, response);
-    } catch (Exception e) {
-      response.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
-      return;
-    }
   }
 
   /**
-   * Displays the deliverySlotRequest as a JSON string on page "/new-delivery-request".
+   * Displays the delivery slots of the current user in JSON format.
    */
-  private void printDeliveryRequestSlotToJSON(DeliverySlot deliverySlotRequest, HttpServletResponse response) throws IOException {
-    Gson gson = new Gson();
-    String json = gson.toJson(deliverySlotRequest);
-    response.setContentType("application/json;");
+  @Override
+  public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+    String userId = null;
+    try {
+      // Get the idToken from query string.
+      userId = firebaseAuth.getUserIdFromIdToken(request.getParameter("idToken"));
+    } catch (FirebaseAuthException e) {
+      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, e.getMessage());
+      return;
+    }
+    
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    List<DeliverySlot> deliverySlots;
+    try {
+      deliverySlots = slotManager.getUsersDeliverySlotRequests(userId);
+    } catch (Exception e) {
+      // Creating an invalid DeliverySlot can throw ApiException, IOException, InterruptedException
+      // DataNotFoundException or BadRequestException, but slots retrieved from datastore are valid
+      // ,thus the only possible exception is EntityNotFoundException.
+      response.sendError(HttpServletResponse.SC_NOT_FOUND, e.getMessage());
+      return;
+    }
 
+    Gson gson = new Gson();
+    String json = gson.toJson(deliverySlots);
+    response.setContentType("application/json;");
     response.getWriter().println(json);
+    System.out.println(json);
+    response.setStatus(HttpServletResponse.SC_OK);
   }
 
   /**

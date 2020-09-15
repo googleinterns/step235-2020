@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>AlphaBooks Library</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/7.4.0/firebase.js"></script>
+    <script src="config.js"></script>
+    <!-- Initialize firebase using CDN -->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+    <script src="common.js"></script>
+    <script src="app.js"></script>
+    <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+  </head>
+  
+  <body onload="displayDeliverySlots()">
+
+    <div class="menu-container"></div>
+
+    <div class="content-container">
+      <h1>Your delivery slots: </h1>
+      <ul id="delivery-slots-container"></ul>
+    </div>
+
+  </body>
+<html>

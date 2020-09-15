@@ -18,7 +18,9 @@ import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.EntityNotFoundException;
+import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.KeyFactory;
+import com.google.appengine.api.datastore.Query;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.maps.model.LatLng;
@@ -30,7 +32,9 @@ import java.text.SimpleDateFormat;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * Class that manages delivery slots.
@@ -67,5 +71,29 @@ public class DeliverySlotManager {
     Entity deliverySlotRequest = createDeliverySlotRequestEntity(deliverySlot);
     datastore.put(deliverySlotRequest);
     deliverySlot.setSlotId(KeyFactory.keyToString(deliverySlotRequest.getKey()));
+  }
+
+  /**
+   * Returns a list with all the deliverySlotRequests of user with id userId.
+   */
+  public List<DeliverySlot> getUsersDeliverySlotRequests(String userId) throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
+    List<DeliverySlot> deliverySlots = new ArrayList<DeliverySlot>();
+
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Query query = new Query("deliverySlotRequest").setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, userId));
+    List<Entity> results = datastore.prepare(query).asList(FetchOptions.Builder.withDefaults());
+    
+    for (Entity deliverySlotEntity : results) {
+      DeliverySlot deliverySlot = new DeliverySlot((Date)deliverySlotEntity.getProperty(DeliverySlot.Property.START_TIME.label),
+      (Date)deliverySlotEntity.getProperty(DeliverySlot.Property.END_TIME.label),
+      (String)deliverySlotEntity.getProperty(DeliverySlot.Property.USER_ID.label));
+
+      deliverySlot.setStartPoint((double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LAT.label),
+        (double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LNG.label));
+      deliverySlot.setSlotId(KeyFactory.keyToString(deliverySlotEntity.getKey()));
+      deliverySlots.add(deliverySlot);
+    }
+    
+    return deliverySlots;
   }
 }
