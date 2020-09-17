@@ -1,0 +1,5 @@
+cron:
+- description: "Load books stocks"
+  url: /load-database
+  schedule: 1 of month 10:00
+  
