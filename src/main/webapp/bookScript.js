@@ -105,8 +105,6 @@ function addBooksGrid(bookList) {
   // Safely remove the old contents.
   bookGrid.innerHTML = '';
   // Add every book to the main page grid.
-  /* TODO [anamariamilcu] When database is ready, only display books
-     that exist in database. */
   bookList.forEach(book => bookGrid.append(createBookElement(book)));
 }
 

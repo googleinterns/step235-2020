@@ -268,6 +268,10 @@ async function addMenu() {
   home.innerText = 'Home';
   home.href = 'loggedIn.html';
   menuElement.append(home);
+  const cart = document.createElement('a');
+  cart.innerText = 'See your cart';
+  cart.href = 'cart.html';
+  menuElement.append(cart);
   const address = document.createElement('a');
   address.innerText = 'Set/Edit address';
   address.href = 'address.html';
@@ -275,7 +279,7 @@ async function addMenu() {
   const bookshelves = document.createElement('a');
   bookshelves.innerText = 'See your bookshelves';
   bookshelves.href = 'bookshelves.html';
-  menuElement.append(bookshelves);
+  //menuElement.append(bookshelves);
   const courier_header = document.createElement('h3');
   courier_header.setAttribute('id', 'courier-header');
   courier_header.innerText = 'BECOME A COURIER';

@@ -32,6 +32,8 @@ function getBookDetails(API_KEY) {
     if (response.status === 200) {
       response.json().then(result => {
         displayDetails(result);
+        // Add callback that will add the book to shopping cart.
+        document.getElementById('add-to-cart').addEventListener('click', addBookToCart);
       });
     } else {
       alert(`Error ${response.status}. Please try again.`);
@@ -62,6 +64,32 @@ function displayDetails(bookJSON) {
     volumeInfo.description.replace(/(<([^>]+)>)/gi, '');
   document.getElementById('identifiers').innerText =
     getStringIdentifiers(volumeInfo.industryIdentifiers);
+}
+
+/**
+ * Performs a POST request that will add the current book to the shopping cart.
+ */
+
+async function addBookToCart() {
+  // todo check if book is in database
+  let idToken = await getIdToken();
+  let queries = {
+    'idToken' : idToken,
+    'bookId' : ID
+  }
+  fetch('/shopping-cart', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+  body: JSON.stringify(queries),
+  }).then(response => {
+    if (response.status === 200) {
+      alert('Successfully added to cart!');
+    } else {
+      alert(`Error ${response.status}. Please try again.`)
+    }
+  });
 }
 
 /**
