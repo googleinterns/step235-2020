@@ -226,7 +226,7 @@ async function displayDeliverySlots() {
     for (const slot in slots) {
       deliverySlotElem = createUlElement(`Delivery slot with ID: ${slots[slot].slotId}`);
       slotTime = createListElement(`Starts at ${slots[slot].startTime} and ends at ${slots[slot].endTime}`);
-      slotAddress = createListElement(`The starting point is ${slots[slot].startPoint}`);
+      slotAddress = createListElement(`The starting point is ${slots[slot].startPoint.latitude}, ${slots[slot].startPoint.longitude}`);
       // Show the start, end times and starting point of delivery slot as list elements. 
       // TODO[ak47na]: improve the way delivery slots are shown (e.g. add line breaks between them).
       deliverySlotElem.appendChild(slotTime);

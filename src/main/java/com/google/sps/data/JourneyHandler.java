@@ -16,6 +16,7 @@ package com.google.sps.data;
 
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.gson.Gson;
 import com.google.maps.errors.ApiException;
 
@@ -26,19 +27,22 @@ import java.util.ArrayList;
  * Class that stores and creates journeys for delivery slots.
  */
 public class JourneyHandler {
+  private PathFinder pathFinder;
+
+  public JourneyHandler(PathFinder pathFinder) {
+    this.pathFinder = pathFinder;
+  }
   /**
    * Finds a set of orders and an optimal journey for deliverySlot.
    */
-  public void processDeliveryRequest(DeliverySlot deliverySlot) throws ApiException, IOException, InterruptedException {
-    DeliverySystem deliverySystem = new DeliverySystem();
-    ArrayList<Point> orderedWaypoints = deliverySystem.findOptimalDeliveryJourneyForDeliverySlot(deliverySlot);
-    addDeliveryJourney(orderedWaypoints, deliverySlot);
+  public void processDeliveryRequest(DeliverySlot deliverySlot) throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
   }
 
   /**
    * Adds the details of the delivery journey assigned to deliverySlot to datastore.
    */
-  protected void addDeliveryJourney(ArrayList<Point> waypoints, DeliverySlot deliverySlot) {
+  protected void addDeliveryJourney(Journey journey, DeliverySlot deliverySlot) {
     throw new UnsupportedOperationException("TODO: Implement this method.");
   }
 }

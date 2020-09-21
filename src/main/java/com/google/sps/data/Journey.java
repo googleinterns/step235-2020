@@ -16,13 +16,13 @@ package com.google.sps.data;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
-import java.util.Map;
+import java.util.List;
 import java.lang.reflect.Array;
 import com.google.maps.errors.ApiException;
 import java.io.IOException;
 import java.lang.InterruptedException;
-
-import java.util.HashMap;
+import java.time.Duration;
+import java.time.Instant;
 
 /**
  * Class that represents a delivery journey.
@@ -30,17 +30,18 @@ import java.util.HashMap;
 public class Journey {
   // The number of seconds the journey lasts.
   private int minTime;
-  // Array of pairs (a, b) meaning that waypoint with value a in waypoints must be visited before
-  // waypoint b.
+  // Array of pairs (a, b) meaning that waypoint with index a in waypoints must be visited before
+  // waypoint with index b.
   private ArrayList<Pair> restrictions;
   // The starting point for the journey.
-  private Point start;
-  // Hashmap with keys representing Point objects and values representing their index. E.g. when
-  // a new Point is added to the hashmap, its value will be the equal to the number of elements.
-  // The hashmap is preferred to an ArrayList so that Point objects can be removed efficiently.
-  private HashMap<Point, Integer> waypoints;
-  // TODO[ak47na]: add PathFinder object, interface and the classes that implement it: 
-  // GoogleMapsPathFinder used for production and ManhattanDistancePathFinder for testing.
+  private CourierStop start;
+  // Array of Point objects representing the waypoints that must be visited not including the start
+  // point. The index of each waypoint in the array will be used to mark order restrictions.
+  private List<CourierStop> waypoints;
+  // Array of encoded string representations of the keys of orders from Datastore assigned to the journey.
+  private List<String> orderKeys;
+  // PathFinder Object that finds paths between 2 points by calling Directions API.
+  private PathFinder pathFinder;
 
   /**
    * Helper class used for computing the bestTime matrix and order restrictions between pairs of
@@ -56,12 +57,70 @@ public class Journey {
   }
 
   /**
-   *  Initializes a journey object that starts at start.
+   *  Initializes a journey object that starts at start and computes paths using pathFinder.
    */
-  public Journey(Point starter) {
+  public Journey(CourierStop start, PathFinder pathFinder) {
     this.start = start;
-    waypoints = new HashMap<>();
+    this.pathFinder = pathFinder;
+    waypoints = new ArrayList<>();
     restrictions = new ArrayList<>();
+    orderKeys = new ArrayList<>();
     minTime = 0;
+  }
+
+  public int getNumberOfWaypoints() {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  public List<String> getOrders() {
+    return orderKeys;
+  }
+
+  /**
+   * Returns true if the minimum time journey fits in the timeslot and false otherwise.
+   */
+  public boolean findJourneyForTimeslot(DeliverySlot deliverySlot) throws ApiException, IOException, InterruptedException {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  /**
+   * Computes and returns the optimal order in which points should be visited starting from the
+   * last point to the fist one (the start Point).
+   */
+  public ArrayList<CourierStop> findOptimalOrderForWaypoints() {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  public void addRestriction(int first, int second) {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  public void addOrder(String orderKey, Point library, Point recipient) throws DataNotFoundException {
+    orderKeys.add(orderKey);
+    // Add the order key to the library and recipient waypoints.
+    waypoints.get(getWaypointIndex(library)).addOrderKey(orderKey);
+    waypoints.get(getWaypointIndex(recipient)).addOrderKey(orderKey);
+  }
+
+  /**
+   * Returns the index of point in waypoints array.
+   */
+  public int getWaypointIndex(Point point) throws DataNotFoundException {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  /**
+   * Returns false if the point is already in the waypoints List or it adds it to the List
+   * and returns true.
+   */
+  public boolean addPointToWaypoints(Point point) {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
+  }
+
+  /**
+   * Removes point from waypoints and decreases the number of waypoints.
+   */
+  public void removeWaypoint(Point point) {
+    throw new UnsupportedOperationException("TODO: Implement this method.");
   }
 }

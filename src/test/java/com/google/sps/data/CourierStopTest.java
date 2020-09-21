@@ -13,28 +13,27 @@
 // limitations under the License.
 package com.google.sps.data;
 
-import com.google.maps.model.LatLng;
-import com.google.sps.data.Point;
-import com.google.maps.errors.ApiException;
-import com.google.sps.data.MapsRequest;
 import java.io.IOException;
 import java.lang.InterruptedException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
 
-/**
- * Class that represents a library point in a delivery journey using its latitude and longitude.
+/** 
+ * Classed used for testing CourierStop objects;
  */
-public class LibraryPoint extends Point {
-  private int libraryId;
-
-  public LibraryPoint(double latitude, double longitude, int id) throws BadRequestException {
-    super(latitude, longitude);
-    this.libraryId = id;
-  }
-
-  public int getLibraryId() {
-    return libraryId;
+@RunWith(JUnit4.class)
+public class CourierStopTest {
+  @Test
+  public void testAddOrderKey() throws BadRequestException {
+    CourierStop stop = new CourierStop(new Point(0, 0));
+    stop.addOrderKey("key1");
+    stop.addOrderKey("key2");
+    Assert.assertEquals(Arrays.asList("key1", "key2"), stop.getOrderKeys());
   }
 }

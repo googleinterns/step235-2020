@@ -14,27 +14,33 @@
 package com.google.sps.data;
 
 import com.google.maps.model.LatLng;
-import com.google.sps.data.Point;
 import com.google.maps.errors.ApiException;
 import com.google.sps.data.MapsRequest;
 import java.io.IOException;
 import java.lang.InterruptedException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 /**
- * Class that represents a library point in a delivery journey using its latitude and longitude.
+ * Class that represents a stop in a delivery journey.
  */
-public class LibraryPoint extends Point {
-  private int libraryId;
+public class CourierStop {
+  Point point;
+  List<String> orderKeys;
 
-  public LibraryPoint(double latitude, double longitude, int id) throws BadRequestException {
-    super(latitude, longitude);
-    this.libraryId = id;
+  public CourierStop(Point point) {
+    this.point = point;
+    orderKeys = new ArrayList<>();
   }
 
-  public int getLibraryId() {
-    return libraryId;
+  /**
+   * Add the keyStrings orderKeys to the orders that must be delivered/picked up at this point.
+   */
+  public void addOrderKey(String orderKey) {
+    orderKeys.add(orderKey);
+  }
+
+  public List<String> getOrderKeys() {
+    return orderKeys;
   }
 }

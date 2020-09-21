@@ -41,6 +41,9 @@ import com.google.sps.data.DeliverySlot;
 import com.google.sps.data.DeliverySlotManager;
 import com.google.sps.data.FirebaseAuthentication;
 import com.google.sps.data.FirebaseSingletonApp;
+import com.google.sps.data.GoogleMapsPathFinder;
+import com.google.sps.data.JourneyHandler;
+import com.google.sps.data.MapsRequest;
 import com.google.sps.data.JourneyHandler;
 import com.google.sps.data.MapsRequest;
 import java.io.IOException;
@@ -156,14 +159,15 @@ public class NewRequestServlet extends HttpServlet {
     }
     slotManager.createDeliverySlot(deliverySlot);
     markUserAsCourier(userId);
-    JourneyHandler journeyHandler = new JourneyHandler();
+    JourneyHandler journeyHandler = new JourneyHandler(new GoogleMapsPathFinder());
     try {
       // Create journey for deliverySlot and add it to datastore.
       journeyHandler.processDeliveryRequest(deliverySlot);
-    } catch (ApiException | InterruptedException e) {
+    } catch (ApiException | BadRequestException | DataNotFoundException | EntityNotFoundException | InterruptedException e) {
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
       return;
     }
+    response.sendRedirect("/loggedIn.html");
   }
 
   /**

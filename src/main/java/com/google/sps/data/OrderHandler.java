@@ -17,7 +17,9 @@ package com.google.sps.data;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
+import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
 import com.google.maps.errors.ApiException;
@@ -152,16 +154,40 @@ public class OrderHandler {
   }
 
   /**
-   * Get unassigned orders from datastore with the area set to area.
-   * TODO[ak47na]: change method to return a list of Order objects so that classes that call it 
-   * don't need to know how data is stored.
+   * Returns the keyString of unassigned orders from datastore with the area set to area.
    */
-  List<Entity> getAvailableOrders(int area) {
+  List<String> getAvailableOrders(int area) {
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     Query orderQuery = new Query("Order")
         .setFilter(new Query.FilterPredicate(OrderProperty.AREA.label, Query.FilterOperator.EQUAL, area))
         .setFilter(new Query.FilterPredicate(OrderProperty.STATUS.label, Query.FilterOperator.EQUAL, OrderStatus.ADDED.toString()));
 
-    return datastore.prepare(orderQuery).asList(FetchOptions.Builder.withDefaults());
+    List<Entity> results = datastore.prepare(orderQuery).asList(FetchOptions.Builder.withDefaults());
+    List <String> resultsKeyStrings = new ArrayList<>();
+    for (Entity order : results) {
+      resultsKeyStrings.add(KeyFactory.keyToString(order.getKey()));
+    }
+    return resultsKeyStrings;
+  }
+
+  /** 
+   * Returns the property propertyName of order with keyString representation orderKeyStr.
+   */
+  public Object getProperty(String orderKeyStr, String propertyName) throws EntityNotFoundException {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Entity order = datastore.get(KeyFactory.stringToKey(orderKeyStr));
+    return order.getProperty(propertyName);
+  }
+
+  /** 
+   * Updates the status property of orders with the keyString from orderKeys list to status.
+   * TODO[ak47na]: use transactions to update the state of orders.
+   */
+  public void updateStatusForOrders(List<String> orderKeys, String status) throws EntityNotFoundException {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    for (String orderKey : orderKeys) {
+      Entity order = datastore.get(KeyFactory.stringToKey(orderKey));
+      order.setProperty(OrderProperty.STATUS.label, status);
+    }
   }
 }

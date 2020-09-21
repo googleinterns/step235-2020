@@ -18,6 +18,8 @@ import com.google.maps.errors.ApiException;
 import com.google.sps.data.MapsRequest;
 import java.io.IOException;
 import java.lang.InterruptedException;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Class that represents points on the map using latitude and longitude coordinates.

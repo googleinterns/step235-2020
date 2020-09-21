@@ -41,6 +41,7 @@ public class DeliverySlot {
       this.label = label;
     }
   }
+
   // The date and time that the courier starts their delivery run.
   private Date startTime;
   // The date and time that the courier ends their delivery run.
@@ -112,6 +113,10 @@ public class DeliverySlot {
     return slotId;
   }
   
+  public Point getStartPoint(){
+    return startPoint;
+  }
+
   public double getStartLatitude() {
     return startPoint.latitude;
   }
