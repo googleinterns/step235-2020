@@ -30,6 +30,22 @@ import java.util.List;
  * Class used for managing the stock of books. 
  */
 public class BooksManager {
+
+  /**
+   * Returns the total stock for the given book or 0 if book is not in the database.
+   */
+
+  public static int getBookStock(String bookId) {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Query query = new Query("Book").setFilter(new Query.FilterPredicate("bookId", Query.FilterOperator.EQUAL, bookId));
+    PreparedQuery results = datastore.prepare(query);
+    if (results.asSingleEntity() == null) {
+      return 0;
+    } else {
+      return ((Long) results.asSingleEntity().getProperty("totalStock")).intValue();
+    }
+  }
+
   /** 
    * Returns a List of "Library" Entity objects that have bookId in stock.
    */

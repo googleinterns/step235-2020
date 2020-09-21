@@ -71,7 +71,13 @@ function displayDetails(bookJSON) {
  */
 
 async function addBookToCart() {
-  // todo check if book is in database
+  // Check if book is in datastore, only allow orders of books that are in stock.
+  let response = await fetch(`/book-stock?bookId=${ID}`).then(response => response.json());
+  console.log(response);
+  if (response.isInStock === false) {
+    alert('Right now this book is not in sock. We apologize for the inconvinience.');
+    return;
+  } 
   let idToken = await getIdToken();
   let queries = {
     'idToken' : idToken,
