@@ -61,7 +61,7 @@ public class DeliverySlot {
       throw new BadRequestException("Please enter a valid time!");
     }
     if (startTimeInMiliseconds < System.currentTimeMillis() - deliveryDay.getTime()) {
-      throw new ExpiredRequestException("Please enter a valid date!");
+      throw new BadRequestException("Please enter a valid date!");
     }
     this.startTime = new Date(deliveryDay.getTime() + startTimeInMiliseconds);
     this.endTime = new Date(deliveryDay.getTime() + endTimeInMiliseconds);
