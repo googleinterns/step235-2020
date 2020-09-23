@@ -343,10 +343,10 @@ async function addMenu() {
   address.innerText = 'Set/Edit address';
   address.href = 'address.html';
   menuElement.append(address);
-  const bookshelves = document.createElement('a');
-  bookshelves.innerText = 'See your bookshelves';
-  bookshelves.href = 'bookshelves.html';
-  //menuElement.append(bookshelves);
+  const orderHistory = document.createElement('a');
+  orderHistory.innerText = 'The books you read';
+  orderHistory.href = 'orderHistory.html';
+  menuElement.append(orderHistory);
   const courier_header = document.createElement('h3');
   courier_header.setAttribute('id', 'courier-header');
   courier_header.innerText = 'BECOME A COURIER';
@@ -371,4 +371,20 @@ async function addMenu() {
       menuElement.append(view_delivery_slots);
     }
   });
+}
+
+/**
+ * Make a request to Google Books API to obtain the JSON with details about the
+ * book with given ID to be able to print the title and author of the book on
+ * the shopping cart page.
+ * @param {String} id 
+ */
+
+async function getBookJSON(id) {
+  // To get results from UK publishing houses.
+  const COUNTRY = 'UK';
+  const URL = `https://www.googleapis.com/books/v1/volumes/${id}?country=${COUNTRY}`;
+  const response = await fetch(URL);
+  const json = await response.json();
+  return json;
 }

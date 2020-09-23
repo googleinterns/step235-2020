@@ -238,7 +238,7 @@ input, textarea {
   margin-top: 15px;
 }
 
-#shopping-list {
+#shopping-list, #order-list {
   padding: 0px;
   list-style-type: none;
 }

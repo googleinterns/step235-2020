@@ -81,3 +81,13 @@ describe('Testing common.js - parseQueryString', () => {
     expect(result).toEqual({});
   });
 });
+
+describe('Testing common.js - getBookJSON', () => {
+  it('getting the correct info about a book', async () => {
+    const result = await getBookJSON('OBM3AAAAIAAJ');
+
+    expect(result.volumeInfo.title).toEqual('The Sign of Four');
+    expect(result.volumeInfo.pageCount).toEqual(283);
+    expect(result.volumeInfo.publisher).toEqual('Spencer Blacket');
+  });
+});

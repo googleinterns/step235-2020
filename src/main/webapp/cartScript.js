@@ -76,20 +76,28 @@ async function createListElement(bookId) {
 }
 
 /**
- * Make a request to Google Books API to obtain the JSON with details about the
- * book with given ID to be able to print the title and author of the book on
- * the shopping cart page.
- * @param {String} id 
+ * Will trigger the servlet that adds the current order to the datastore.
+ * Firstly, will check if the user set his addres as an oder cannot be placed
+ * otherwise.
  */
 
-async function getBookJSON(id) {
-  // To get results from UK publishing houses.
-  const COUNTRY = 'UK';
-  let URL = `https://www.googleapis.com/books/v1/volumes/${id}`;
-  URL += `?country=${COUNTRY}`;
-  const response = await fetch(URL);
-  const json = await response.json();
-  return json;
+async function placeOrder() {
+  // Check if current addres exists.
+  let idToken = await getIdToken();
+  let userInfo = await fetch(`/user-data?idToken=${idToken}`).then(response => response.json());
+  if (userInfo.address = "") {
+    alert("Please set your address before placing an order!");
+    // Stop if there is no existing address.
+    return;
+  }
+  fetch(`/place-order?idToken=${idToken}`, {method: 'POST'}).then(response => {
+    if (response.status === 200) {
+      alert('Order successfully placed');
+    } else {
+      alert(`Error ${response.status}. Please try again. Your address might not be correct.`)
+      
+    }
+  });
 }
 
 /**

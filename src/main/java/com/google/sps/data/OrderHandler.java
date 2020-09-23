@@ -27,7 +27,6 @@ import java.io.IOException;
 import java.lang.InterruptedException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 
@@ -233,6 +232,10 @@ public class OrderHandler {
     
     makeOrders(uid, Point.fromAddress((String) userEntity.getProperty("address")),
           (ArrayList<String>) cartEntity.getProperty("books"));
+
+    // Add the ordered books to the ordering history of the user.
+    OrderHistory orderHistory = new OrderHistory();
+    orderHistory.addBooksToOrderHistory(uid, (ArrayList<String>) cartEntity.getProperty("books"));
 
     // Remove the UserCart Entity from datastore since the cart is now empty.
     datastore.delete(cartEntity.getKey());
