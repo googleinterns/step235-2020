@@ -67,7 +67,7 @@ public class OrderHandler {
    * Creates an "Order" Entity and adds it to datastore. Each order contains a set of books and the
    * library that has all the requested books.
    */
-  public void addOrderToDatastore(LibraryPoint library, List<String> bookIds, String userId, Point address) {
+  public String addOrderToDatastore(LibraryPoint library, List<String> bookIds, String userId, Point address) {
     Entity order = new Entity("Order");
     order.setProperty(OrderProperty.BOOK_IDS.label, bookIds);
     order.setProperty(OrderProperty.LIBRARY_ID.label, (int)library.getLibraryId());
@@ -80,6 +80,7 @@ public class OrderHandler {
     order.setProperty(OrderProperty.USER_ID.label, userId);
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     datastore.put(order);
+    return KeyFactory.keyToString(order.getKey());
   }
 
   /**
@@ -188,6 +189,7 @@ public class OrderHandler {
     for (String orderKey : orderKeys) {
       Entity order = datastore.get(KeyFactory.stringToKey(orderKey));
       order.setProperty(OrderProperty.STATUS.label, status);
+      datastore.put(order);
     }
   }
 }

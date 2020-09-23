@@ -160,9 +160,11 @@ public class NewRequestServlet extends HttpServlet {
     slotManager.createDeliverySlot(deliverySlot);
     markUserAsCourier(userId);
     JourneyHandler journeyHandler = new JourneyHandler(new GoogleMapsPathFinder());
+
     try {
       // Create journey for deliverySlot and add it to datastore.
       journeyHandler.processDeliveryRequest(deliverySlot);
+      // TODO[ak47na]: Warn the user if no orders have been found for the current deliverySlot.
     } catch (ApiException | BadRequestException | DataNotFoundException | EntityNotFoundException | InterruptedException e) {
       response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.getMessage());
       return;

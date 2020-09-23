@@ -36,8 +36,8 @@ public class PointTest {
   @Test
   public void testEquals() throws BadRequestException {
     // Two points are equal if both of their coordinates match up to the 4th decimal.
-    Point point1 = new Point(-19.12341, 10.1234);
-    Point point2 = new Point(-19.12345, 10.1234);
+    Point point1 = new Point(-19.123401, 10.1234);
+    Point point2 = new Point(-19.123405, 10.1234);
     Point point3 = new Point(19, 10);
     Assert.assertTrue(point1.equals(point2));
     Assert.assertFalse(point2.equals(point3));

@@ -56,8 +56,8 @@ public class Point {
       return false;
     }
     Point point = (Point) object;
-    return (int)(10000.0 * this.latitude) == (int)(10000.0 * point.latitude) &&
-      (int)(10000.0 * this.longitude) == (int)(10000.0 * point.longitude);
+    return (int)(100000.0 * this.latitude) == (int)(100000.0 * point.latitude) &&
+      (int)(100000.0 * this.longitude) == (int)(100000.0 * point.longitude);
   }
 
   @Override

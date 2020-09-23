@@ -31,6 +31,8 @@ import java.lang.InterruptedException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.After;
@@ -54,7 +56,8 @@ public class DeliverySystemTest {
   private final LocalServiceTestHelper helper =
       new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
   private ArrayList<Point> points;
-  private Point start;
+  private List<CourierStop> courierStops;
+  private Point startPoint;
   private DeliverySystem deliverySystem;
   private OrderHandler orderHandler;
   private ManhattanDistancePathFinder pathFinder;
@@ -72,6 +75,12 @@ public class DeliverySystemTest {
     points.add(new LibraryPoint(0.0004, 0.0005, 1));
     points.add(new Point(0.0005, 0.0006));
     points.add(new Point(0.0009, 0.0008));
+    startPoint = new Point(-0.0001, 0);
+    courierStops = Arrays.asList(startPoint, points.get(0), points.get(1), points.get(2), 
+      points.get(3), points.get(4))
+      .stream()
+      .map(point -> new CourierStop((Point)point))
+      .collect(Collectors.toList());
   }
 
   @After
@@ -79,54 +88,71 @@ public class DeliverySystemTest {
     helper.tearDown();
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testTakeAllOrders() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException  {
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(0), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", points.get(1));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(2), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", points.get(3));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(2), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", points.get(4));
+  private void createOrder(CourierStop library, CourierStop recipient, List<String> bookIds, String userId, boolean addOrderKey) {
+    String orderKey = orderHandler.addOrderToDatastore((LibraryPoint)library.getPoint(), bookIds, userId, recipient.getPoint());
+    if (addOrderKey) {
+      library.addOrderKey(orderKey);
+      recipient.addOrderKey(orderKey);
+    }
+  }
+
+  @Test
+  public void testTakeAllOrdersWhereSlotIsLargeEnough() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException  { 
+    createOrder(courierStops.get(1), courierStops.get(2), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ true);
+    createOrder(courierStops.get(3), courierStops.get(4), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ true);
+    createOrder(courierStops.get(3), courierStops.get(5), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ true);
+   
     long totalSeconds = pathFinder.distance(points.get(0), points.get(1)) +
       pathFinder.distance(points.get(1), points.get(2)) +
       pathFinder.distance(points.get(2), points.get(3)) + 
       pathFinder.distance(points.get(3), points.get(4)) +
-      pathFinder.distance(new Point(-0.0001, 0), points.get(0)) + 1;
+      pathFinder.distance(startPoint, points.get(0)) + 1;
 
     DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 0, totalSeconds * 1000, "user0");
     // Start all delivery journey at point (-0.0001, 0).
     deliverySlot.setStartPoint(-0.0001, 0);
     Journey journey = deliverySystem.createJourneyForDeliveryRequest(deliverySlot);
+    // Test that all orders are taken.
     assertEquals(5, journey.getNumberOfWaypoints());
+    // Test that the visiting order for courier stops is optimal and the correct orders are 
+    // assigned to them.
+    assertEquals(courierStops, journey.findOptimalOrderForWaypoints());
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testTakeNoOrder() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(0), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", points.get(1));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(2), Arrays.asList("buc0AAAAMAAJ", "NRWlitmahXkC"), "user0", points.get(3));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(2), Arrays.asList("NRWlitmahXkC", "zyTCAlFPjgYC"), "user0", points.get(4));
+  @Test
+  public void testTakeNoOrderIfSlotTooSmall() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
+    createOrder(courierStops.get(1), courierStops.get(2), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ false);
+    createOrder(courierStops.get(3), courierStops.get(4), Arrays.asList("buc0AAAAMAAJ", "NRWlitmahXkC"), "user0", /** addOrderKey = */ false);
+    createOrder(courierStops.get(3), courierStops.get(5), Arrays.asList("NRWlitmahXkC", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ false);
     
     DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 0, 1, "user0");
     // Start all delivery journey at point (-0.0001, 0).
     deliverySlot.setStartPoint(-0.0001, 0);
     Journey journey = deliverySystem.createJourneyForDeliveryRequest(deliverySlot);
-
+    // Test that no orders are taken because the duration of the timeslot is very short.
     assertEquals(0, journey.getNumberOfWaypoints());
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testTakeOneOrder() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(0), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", points.get(1));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(2), Arrays.asList("buc0AAAAMAAJ", "NRWlitmahXkC"), "user0", points.get(3));
-    orderHandler.addOrderToDatastore((LibraryPoint)points.get(0), Arrays.asList("NRWlitmahXkC", "zyTCAlFPjgYC"), "user0", points.get(4));
+  @Test
+  public void testTakeOnlyOneOrderIfSecondOrderExceedsDeliverySlot() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
+    createOrder(courierStops.get(1), courierStops.get(2), Arrays.asList("buc0AAAAMAAJ", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ true);
+    createOrder(courierStops.get(3), courierStops.get(4), Arrays.asList("buc0AAAAMAAJ", "NRWlitmahXkC"), "user0", /** addOrderKey = */ false);
+    createOrder(courierStops.get(1), courierStops.get(5), Arrays.asList("NRWlitmahXkC", "zyTCAlFPjgYC"), "user0", /** addOrderKey = */ false);
 
+    Point startPoint = new Point(-0.0001, 0);
     long totalSeconds = pathFinder.distance(points.get(0), points.get(1)) +
-      pathFinder.distance(new Point(-0.0001, 0), points.get(0)) + 1;
+      pathFinder.distance(startPoint, points.get(0)) + 1;
+
     DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 0, totalSeconds * 1000, "user0");
     // Start all delivery journey at point (-0.0001, 0).
     deliverySlot.setStartPoint(-0.0001, 0);
     Journey journey = deliverySystem.createJourneyForDeliveryRequest(deliverySlot);
+    // Check that the only order assigned is the first one.
     assertEquals(2, journey.getNumberOfWaypoints());
+    assertEquals(Arrays.asList(courierStops.get(0), courierStops.get(1), courierStops.get(2)), journey.findOptimalOrderForWaypoints());
   }
 
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void noAvailableOrder() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
     long totalSeconds = pathFinder.distance(points.get(0), points.get(1)) +
       pathFinder.distance(points.get(2), points.get(3)) + 
@@ -136,6 +162,7 @@ public class DeliverySystemTest {
     // Start all delivery journey at point (-0.0001, 0).
     deliverySlot.setStartPoint(-0.0001, 0);
     Journey journey = deliverySystem.createJourneyForDeliveryRequest(deliverySlot);
+    // Check that no order is assigned.
     assertEquals(0, journey.getNumberOfWaypoints());
   }
 }

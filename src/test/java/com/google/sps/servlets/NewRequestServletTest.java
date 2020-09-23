@@ -133,7 +133,7 @@ public final class NewRequestServletTest {
   /**
    * Tests that when correct data is sent to the servlet, no BAD_REQUEST errors are sent. 
    */
-  @Test(expected = UnsupportedOperationException.class)
+  @Test
   public void testNewRequestsAutomaticallyCreatesCourierProfile() throws IOException, ServletException, FirebaseAuthException {
     when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
     when(request.getParameter("start-time")).thenReturn("05:15");

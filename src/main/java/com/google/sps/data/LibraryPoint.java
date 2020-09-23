@@ -29,7 +29,7 @@ import java.util.List;
 public class LibraryPoint extends Point {
   private int libraryId;
 
-  public LibraryPoint(double latitude, double longitude, int id) throws BadRequestException {
+  public LibraryPoint(double latitude, double longitude, int id) throws ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
     super(latitude, longitude);
     this.libraryId = id;
   }

@@ -20,6 +20,7 @@ import com.google.sps.data.Point;
 import java.io.IOException;
 import java.lang.InterruptedException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -45,8 +46,6 @@ public class DeliverySystem {
     Journey journey = new Journey(new CourierStop(startPoint), pathFinder);
     OrderHandler orderHandler = new OrderHandler(pathFinder);
     // Get unassigned orders from datastore which are in the area of the starting point.
-    // TODO[ak47na]: change getAvailableOrders to return the string representation of order's keys
-    // from datastore instead of the Entity object.
     List<String> orders = orderHandler.getAvailableOrders(startPoint.getArea());
     for (String orderKey : orders) {
       if (journey.getNumberOfWaypoints() >= MAX_WAYPOINTS) {
@@ -55,7 +54,7 @@ public class DeliverySystem {
 
       LibraryPoint library = new LibraryPoint((double) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.LIBRARY_LAT.label), 
         (double) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.LIBRARY_LNG.label),
-        (int) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.LIBRARY_ID.label));
+        ((Number) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.LIBRARY_ID.label)).intValue());
       Point recipient = new Point((double) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.RECIPIENT_LAT.label), 
         (double) orderHandler.getProperty(orderKey, OrderHandler.OrderProperty.RECIPIENT_LNG.label));
       

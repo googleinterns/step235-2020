@@ -17,6 +17,7 @@ package com.google.sps.data;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
+import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.Key;
 import com.google.appengine.api.datastore.KeyFactory;
@@ -96,6 +97,10 @@ public class OrderHandlerTest {
     addBookToDatastore(ds, "book4", Arrays.asList());
   }
 
+  private void createOrder(CourierStop library, CourierStop recipient, List<String> bookIds, String userId) {
+    String orderKey = orderHandler.addOrderToDatastore((LibraryPoint)library.getPoint(), bookIds, userId, recipient.getPoint());
+  }
+
   @Test(expected = UnsupportedOperationException.class)
   public void testInvalidOrder() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
     inintializeBooksDatastore();
@@ -159,15 +164,43 @@ public class OrderHandlerTest {
     return resultsKeyStrings;
   }
 
+  @Test
   public void testGetAvailableOrders() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
-    inintializeBooksDatastore();
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
-    orderHandler.makeOrders("user1", new Point(3, 3), Arrays.asList("book1", "book2", "book3"));
-    orderHandler.makeOrders("user1", new Point(3, 3), Arrays.asList("book1", "book3"));
-    List<String> expected = getEntitiesKeyString(ds.prepare(new Query("Order").
-      setFilter(new Query.FilterPredicate(OrderHandler.OrderProperty.STATUS.label, Query.FilterOperator.EQUAL, OrderHandler.OrderStatus.ADDED.toString())))
-        .asList(FetchOptions.Builder.withDefaults()));
+    String orderKey1 = orderHandler.addOrderToDatastore(new LibraryPoint(0, 0, 0), Arrays.asList("book1", "book2", "book3"), "user1", new Point(3, 3));
+    String orderKey2 = orderHandler.addOrderToDatastore(new LibraryPoint(1, 1, 1), Arrays.asList("book1", "book3"), "user1", new Point(3, 3));
+   
+    List<String> expected = Arrays.asList(orderKey1, orderKey2); 
     Assert.assertEquals(expected, orderHandler.getAvailableOrders(new Point(3, 3).getArea()));
+  }
+
+  @Test
+  public void testUpdateStatusForOrders() throws ApiException, BadRequestException, DataNotFoundException, EntityNotFoundException, IOException, InterruptedException {
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    String orderKey1 = orderHandler.addOrderToDatastore(new LibraryPoint(0, 0, 0), Arrays.asList("book1", "book2", "book3"), "user1", new Point(3, 3));
+    String orderKey2 = orderHandler.addOrderToDatastore(new LibraryPoint(1, 1, 1), Arrays.asList("book1", "book3"), "user1", new Point(3, 3));
+    String orderKey3 = orderHandler.addOrderToDatastore(new LibraryPoint(1, 1, 1), Arrays.asList("book1", "book3"), "user0", new Point(3, 3));
+    // Change the status of orderKey1 and orderKey2 to ASSIGNED.
+    orderHandler.updateStatusForOrders(Arrays.asList(orderKey1, orderKey2), OrderHandler.OrderStatus.ASSIGNED.toString());
+    // Test that the status of the 2 orders has changed to ASSIGNED.
+    List<String> actual = getEntitiesKeyString(ds.prepare(new Query("Order").
+      setFilter(new Query.FilterPredicate(OrderHandler.OrderProperty.STATUS.label, Query.FilterOperator.EQUAL, OrderHandler.OrderStatus.ASSIGNED.toString())))
+        .asList(FetchOptions.Builder.withDefaults()));
+    Assert.assertEquals(Arrays.asList(orderKey1, orderKey2), actual);
+  }
+
+  @Test
+  public void testGetProperty() throws ApiException, BadRequestException, DataNotFoundException, IOException, EntityNotFoundException, InterruptedException {
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    String orderKey1 = orderHandler.addOrderToDatastore(new LibraryPoint(0, 0, 0), Arrays.asList("book1", "book2", "book3"), "user1", new Point(3, 3));
+    Assert.assertEquals(OrderHandler.OrderStatus.ADDED.toString(), (String)orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.STATUS.label));
+    Assert.assertEquals("user1", (String)orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.USER_ID.label));
+    Assert.assertEquals(0, ((Number)orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.LIBRARY_ID.label)).intValue());
+    Assert.assertEquals(0.0, orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.LIBRARY_LAT.label));
+    Assert.assertEquals(0.0, orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.LIBRARY_LNG.label));
+    Assert.assertEquals(3.0, orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.RECIPIENT_LAT.label));
+    Assert.assertEquals(3.0, orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.RECIPIENT_LNG.label));
+    Assert.assertEquals(Arrays.asList("book1", "book2", "book3"), (List<String>)orderHandler.getProperty(orderKey1, OrderHandler.OrderProperty.BOOK_IDS.label));
   }
 
   @After

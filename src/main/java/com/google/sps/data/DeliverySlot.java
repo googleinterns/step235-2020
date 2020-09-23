@@ -112,7 +112,7 @@ public class DeliverySlot {
   public String getSlotId() {
     return slotId;
   }
-  
+
   public Point getStartPoint(){
     return startPoint;
   }

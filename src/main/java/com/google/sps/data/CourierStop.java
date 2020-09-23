@@ -33,6 +33,20 @@ public class CourierStop {
     orderKeys = new ArrayList<>();
   }
 
+  public Point getPoint() {
+    return point;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    CourierStop courierStop = (CourierStop)object;
+    if (this.point.equals(courierStop.getPoint())) {
+      return this.orderKeys.equals(courierStop.getOrderKeys());
+    } else {
+      return false; 
+    }
+  }
+
   /**
    * Add the keyStrings orderKeys to the orders that must be delivered/picked up at this point.
    */

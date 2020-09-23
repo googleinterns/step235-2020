@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <title>AlphaBooks Library</title>
+    <link rel="manifest" href="manifest.json">
+    <script src="https://www.gstatic.com/firebasejs/7.4.0/firebase.js"></script>
+    <script src="config.js"></script>
+    <!-- Initialize firebase using CDN -->
+    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+    <script src="common.js"></script>
+    <script src="app.js"></script>
+    <link href="style.css" rel="stylesheet" type="text/css" media="screen" />
+    <script src="mapsScript.js"></script>
+
+  </head>
+  
+  <body>
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        loadMapsScript();
+        displayJourneys();
+      });
+    </script>
+
+    <div class="menu-container"></div>
+
+    <div class="content-container">
+      <div> 
+        <h1>Your delivery journeys: </h1>
+        <ul id="journeys-container"></ul>
+      </div>
+        <h1>Journey map:</h1>
+        <div id="map"></div>
+      </div>
+  </body>
+<html>

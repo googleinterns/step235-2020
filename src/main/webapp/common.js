@@ -29,7 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
  * Set the idToken input value so that it can be sent to the server
  */
 async function setIdToken() {
-  let idToken = await getIdToken();
+  const idToken = await getIdToken();
   if (document.getElementById('idToken')) {
     document.getElementById('idToken').value = idToken;
   } else {
@@ -209,7 +209,7 @@ function getAddressFromLatLng(addressBox) {
 }
 
 /**
- * Fetches user's delivery slots from Java servlet and displayes them on deliverySlots.html page.
+ * Fetches user's journeys from Java servlet and displayes them on journeys.html page.
  */
 async function displayDeliverySlots() {
   let idToken = await getIdToken();
@@ -236,6 +236,73 @@ async function displayDeliverySlots() {
   }).catch(error => {
     alert(error);
   });
+}
+
+/**
+ * Fetches user's delivery slots from Java servlet and displayes them on deliverySlots.html page.
+ */
+async function displayJourneys() {
+  let idToken = await getIdToken();
+  fetch(`/see-journeys?idToken=${idToken}`).then(response => { 
+    if (response.status != 200) {
+      // There was an error when requesting the journeys from the server.
+      throw new Error('Unable to get delivery journeys!');
+    } else {
+      return response.json();
+    }
+  }).then(journeys => {
+    // Display each journey as a list element.
+    const journeysContainer = document.getElementById('journeys-container');
+    for (const index in journeys) {
+      journeyProperties = journeys[index].propertyMap;
+      journeyElem = createUlElement(`Journey with ID: ${journeys[index].key.id}`);
+      journeyTime = createListElement(`Starts at ${journeyProperties.startDate} and ends at ${journeyProperties.endDate}`);
+      journeyElem.appendChild(journeyTime);
+      // Create Array object from waypoints string.
+      waypoints = JSON.parse(journeyProperties.waypoints);
+      // List the waypoints of the journey in the order they must be visited.
+      for (const waypoint in waypoints) {
+        // Add the current waypoint to the delivery journey.
+        pointElem = createUlElement(`Visit point with latitude ${waypoints[waypoint].point.latitude} and longitude ${waypoints[waypoint].point.longitude}`);
+        // Add the orders that must be picked up/delivered at the current point.
+        for (const orderKey in waypoints[waypoint].orderKeys) {
+          orderKeyElem = createListElement(`order ${waypoints[waypoint].orderKeys[orderKey]}`);
+          pointElem.appendChild(orderKeyElem);
+        }
+        // Add the point to the journey.
+        journeyElem.appendChild(pointElem);
+      }
+      journeyElem.appendChild(createViewOnMapButton(waypoints));
+      journeyElem.appendChild(createDeleteButton('Mark Journey as complete', journeyElem));
+      journeysContainer.appendChild(journeyElem);
+    }
+  }).catch(error => {
+    alert(error);
+  });
+}
+
+/**
+ * Given an array of waypoints, it creates a button that onclick, creates a map and displays the
+ * waypoints as markers.
+ */
+function createViewOnMapButton(waypoints) {
+  const button = document.createElement('button');
+  button.innerText = 'View journey map';
+  button.onclick = addMarkersToMap(waypoints);
+  return button;
+}
+
+/** 
+ * Returns a button with text buttonText that deletes toDeletElem from DOM.
+ */
+function createDeleteButton(buttonText, toDeleteElem) {
+  const button = document.createElement('button');
+  button.innerText = buttonText;
+  // Delete toDeleteElem if button is clicked
+  button.onclick = function() {
+    toDeleteElem.parentNode.removeChild(toDeleteElem);
+  }
+  return button;
 }
 
 /** 
