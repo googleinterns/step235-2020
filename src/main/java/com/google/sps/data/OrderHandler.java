@@ -95,7 +95,7 @@ public class OrderHandler {
 
     for (String bookId : bookIds) {
       Entity closestLibrary = getClosestLibrary(
-          booksManager.getLibrariesForBook(bookId, /** setLimit = */ false), address);
+          booksManager.getLibrariesForBook(bookId), address);
       if (closestLibrary == null) {
         // there is no library that has the book bookId, thus the book can't be ordered.
         outOfStookBookIds.add(bookId);
@@ -115,14 +115,17 @@ public class OrderHandler {
     for (LibraryPoint library : libraryBookIds.keySet()) {
       ArrayList<String> booksIds = libraryBookIds.get(library);
       addOrderToDatastore(library, booksIds, userId, address);
-      booksManager.removeBooksFromLibrary(library, booksIds);
+      boolean flag = booksManager.removeBooksFromLibrary(library, booksIds);
+      if (flag == false) {
+        throw new DataNotFoundException("No stock available!");
+      }
     }
 
     return outOfStookBookIds;
   }
 
    /**
-   * Given a List of "Library" Entity objects, it returns the one for which the time to get from it
+   * Given a List of "LibraryStock" Entity objects, it returns the one for which the time to get from it
    * to address is minimised. 
    */
   Entity getClosestLibrary(List<Entity> libraries, Point address) throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException, DataNotFoundException {
@@ -191,5 +194,31 @@ public class OrderHandler {
       order.setProperty(OrderProperty.STATUS.label, status);
       datastore.put(order);
     }
+  }
+
+  /**
+   * The method called by the servlet that actually places the order in the
+   * datastore.
+   */
+
+  public void placeOrder(String uid)
+      throws IOException, ApiException, InterruptedException, DataNotFoundException, BadRequestException {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+
+    // Get the cart entity to get the list of books.
+    Query query = new Query("UserCart").setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, uid));
+    PreparedQuery results = datastore.prepare(query);
+    Entity cartEntity = results.asSingleEntity();
+    // Get the user entity for the address.
+    Query queryUser = new Query("UserInfo")
+        .setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, uid));
+    PreparedQuery resultsUser = datastore.prepare(queryUser);
+    Entity userEntity = resultsUser.asSingleEntity();
+    
+    makeOrders(uid, Point.fromAddress((String) userEntity.getProperty("address")),
+          (ArrayList<String>) cartEntity.getProperty("books"));
+
+    // Remove the UserCart Entity from datastore since the cart is now empty.
+    datastore.delete(cartEntity.getKey());
   }
 }

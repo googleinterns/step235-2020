@@ -73,7 +73,7 @@ public class OrderHandlerTest {
 
   private Entity getLibraryEntity(Entity book, LibraryPoint library, int stock) {
     Key bookKey = book.getKey();
-    Entity libraryEntity = new Entity("Library", bookKey);
+    Entity libraryEntity = new Entity("LibraryStock", bookKey);
     libraryEntity.setProperty("libraryLatitude", library.latitude);
     libraryEntity.setProperty("libraryLongitude", library.longitude);
     libraryEntity.setProperty("libraryId", library.getLibraryId());
@@ -84,6 +84,7 @@ public class OrderHandlerTest {
   private void addBookToDatastore(DatastoreService ds, String bookId, List<LibraryPoint> bookLibraries) {
     Entity book = new Entity("Book");
     book.setProperty("bookId", bookId);
+    book.setProperty("totalStock", 5);
     ds.put(book);
     for (LibraryPoint library : bookLibraries) {
       ds.put(getLibraryEntity(book, library, 5));
@@ -101,8 +102,8 @@ public class OrderHandlerTest {
     String orderKey = orderHandler.addOrderToDatastore((LibraryPoint)library.getPoint(), bookIds, userId, recipient.getPoint());
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testInvalidOrder() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
+  @Test
+  public void testInvalidOrder() throws InterruptedException, ApiException, IOException, DataNotFoundException, BadRequestException {
     inintializeBooksDatastore();
     Collection<String> expected = Arrays.asList("book4");
     // Book4 is not in stock, thus, it will be returned.
@@ -119,8 +120,8 @@ public class OrderHandlerTest {
     Assert.assertEquals(0, ds.prepare(new Query("Order")).countEntities(FetchOptions.Builder.withLimit(10)));
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testOneSuccesfulOrder() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
+  @Test
+  public void testOneSuccesfulOrder() throws InterruptedException, ApiException, IOException, DataNotFoundException, BadRequestException {
     inintializeBooksDatastore();
     Collection<String> expected = Arrays.asList();
     // The ordered books are book1 and book2. Both books are in stock and the closest library for
@@ -130,8 +131,8 @@ public class OrderHandlerTest {
     Assert.assertEquals(1, ds.prepare(new Query("Order")).countEntities(FetchOptions.Builder.withLimit(10)));
   }
 
-  @Test(expected = UnsupportedOperationException.class)
-  public void testTwoSuccesfulOrders() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
+  @Test
+  public void testTwoSuccesfulOrders() throws InterruptedException, ApiException, IOException, DataNotFoundException, BadRequestException {
     inintializeBooksDatastore();
     Collection<String> expected = Arrays.asList();
     Assert.assertEquals(expected, orderHandler.makeOrders("user1", new Point(3, 3), Arrays.asList("book1", "book2", "book3")));
@@ -146,8 +147,8 @@ public class OrderHandlerTest {
   public void testGetClosestLibrary() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
     inintializeBooksDatastore();
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
-    List<Entity> libraryEntities = ds.prepare(new Query("Library")).asList(FetchOptions.Builder.withDefaults());
-
+    List<Entity> libraryEntities = ds.prepare(new Query("LibraryStock")).asList(FetchOptions.Builder.withDefaults());
+    
     Entity closestLibrary = orderHandler.getClosestLibrary(libraryEntities, new Point(0, 1));
     // The closest library for (0, 1) is library 3 at point (0, 0).
     Assert.assertEquals(3, ((Number)closestLibrary.getProperty("libraryId")).intValue());

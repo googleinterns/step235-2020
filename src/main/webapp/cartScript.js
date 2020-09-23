@@ -6,7 +6,10 @@ document.addEventListener('DOMContentLoaded', async function () {
   let idToken = await getIdToken();
   fetch(`/shopping-cart?idToken=${idToken}`).then(response => response.json()).then(bookIds => {
     console.log(bookIds);
+    document.getElementById('order-button').disabled = true;
     displayBookList(bookIds);
+    // Add callback for placing an order.
+    document.getElementById('order-button').addEventListener('click', placeOrder);
   });
 });
 
@@ -23,6 +26,8 @@ function displayBookList(bookIds) {
     listWrapper.innerText = 'No items added to cart';
     return;
   }
+  // Enable order button.
+  document.getElementById('order-button').disabled = false;
   // Append each book as a li element.
   bookIds.forEach(async bookId => {
     let element = await createListElement(bookId);
@@ -85,4 +90,29 @@ async function getBookJSON(id) {
   const response = await fetch(URL);
   const json = await response.json();
   return json;
+}
+
+/**
+ * Will trigger the servlet that adds the current order to the datastore.
+ * Firstly, will check if the user set his addres as an oder cannot be placed
+ * otherwise.
+ */
+
+async function placeOrder() {
+  // Check if current addres exists.
+  let idToken = await getIdToken();
+  let userInfo = await fetch(`/user-data?idToken=${idToken}`).then(response => response.json());
+  if (userInfo.address = "") {
+    alert("Please set your address before placing an order!");
+    // Stop if there is no existing address.
+    return;
+  }
+  fetch(`/place-order?idToken=${idToken}`, {method: 'POST'}).then(response => {
+    if (response.status === 200) {
+      alert('Order successfully placed');
+    } else {
+      alert(`Error ${response.status}. Please try again. Your address might not be correct.`)
+      
+    }
+  });
 }
