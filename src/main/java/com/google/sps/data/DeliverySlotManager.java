@@ -35,11 +35,13 @@ import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Class that manages delivery slots.
  */
 public class DeliverySlotManager {
+  private static final long THIRTY_DAYS = TimeUnit.DAYS.toMillis(30);
   /**
    * Creates a delivery slot request and adds it to datastore.
    */
@@ -74,6 +76,13 @@ public class DeliverySlotManager {
   }
 
   /**
+   * Returns true if the delivery slot started at least 30 days ago.
+   */
+  private boolean isExpired(DeliverySlot deliverySlot) {
+    return (deliverySlot.getStartTime().getTime() + THIRTY_DAYS <= System.currentTimeMillis());
+  }
+
+  /**
    * Returns a list with all the deliverySlotRequests of user with id userId.
    */
   public List<DeliverySlot> getUsersDeliverySlotRequests(String userId) throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
@@ -86,12 +95,16 @@ public class DeliverySlotManager {
     for (Entity deliverySlotEntity : results) {
       DeliverySlot deliverySlot = new DeliverySlot((Date)deliverySlotEntity.getProperty(DeliverySlot.Property.START_TIME.label),
       (Date)deliverySlotEntity.getProperty(DeliverySlot.Property.END_TIME.label),
-      (String)deliverySlotEntity.getProperty(DeliverySlot.Property.USER_ID.label));
-
-      deliverySlot.setStartPoint((double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LAT.label),
-        (double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LNG.label));
-      deliverySlot.setSlotId(KeyFactory.keyToString(deliverySlotEntity.getKey()));
-      deliverySlots.add(deliverySlot);
+      (String)deliverySlotEntity.getProperty(DeliverySlot.Property.USER_ID.label),
+      /** canBeInThePast = */ true);
+      if (isExpired(deliverySlot)) {
+        datastore.delete(deliverySlotEntity.getKey());
+      } else {
+        deliverySlot.setStartPoint((double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LAT.label),
+          (double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LNG.label));
+        deliverySlot.setSlotId(KeyFactory.keyToString(deliverySlotEntity.getKey()));
+        deliverySlots.add(deliverySlot);
+      }
     }
     
     return deliverySlots;

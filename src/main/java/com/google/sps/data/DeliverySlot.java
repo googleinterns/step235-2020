@@ -61,7 +61,7 @@ public class DeliverySlot {
       throw new BadRequestException("Please enter a valid time!");
     }
     if (startTimeInMiliseconds < System.currentTimeMillis() - deliveryDay.getTime()) {
-      throw new BadRequestException("Please enter a valid date!");
+      throw new ExpiredRequestException("Please enter a valid date!");
     }
     this.startTime = new Date(deliveryDay.getTime() + startTimeInMiliseconds);
     this.endTime = new Date(deliveryDay.getTime() + endTimeInMiliseconds);
@@ -76,6 +76,21 @@ public class DeliverySlot {
       throw new BadRequestException("Please enter a valid time!");
     }
     if (startTime.getTime() < System.currentTimeMillis()) {
+      throw new BadRequestException("Please enter a valid date!");
+    }
+    this.startTime = startTime;
+    this.endTime = endTime;
+    this.userId = userId;
+  }
+
+  /**
+   * Creates a delivery slot given a date, start and end times in miliseconds and the user id.
+   */
+  public DeliverySlot(Date startTime, Date endTime, String userId, boolean canBeInThePast) throws BadRequestException {
+    if (startTime.compareTo(endTime) > 0) {
+      throw new BadRequestException("Please enter a valid time!");
+    }
+    if (!canBeInThePast && startTime.getTime() < System.currentTimeMillis()) {
       throw new BadRequestException("Please enter a valid date!");
     }
     this.startTime = startTime;
@@ -127,5 +142,11 @@ public class DeliverySlot {
 
   public void setSlotId(String slotId) {
     this.slotId = slotId;
+  }
+
+  @Override
+  public boolean equals(Object object) {
+    DeliverySlot deliverySlot = (DeliverySlot)object;
+    return slotId.equals(deliverySlot.getSlotId());
   }
 }

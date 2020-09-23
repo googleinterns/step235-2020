@@ -24,9 +24,11 @@ import com.google.appengine.tools.development.testing.LocalDatastoreServiceTestC
 import com.google.appengine.tools.development.testing.LocalServiceTestHelper;
 import com.google.maps.errors.ApiException;
 import com.google.sps.data.DeliverySlot;
+import java.util.Arrays;
 import java.util.Date; 
 import java.time.LocalTime;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.io.IOException;
 import com.google.sps.data.BadRequestException;
 import com.google.sps.data.DataNotFoundException;
@@ -47,6 +49,8 @@ import static org.junit.Assert.assertEquals;
  */
 @RunWith(JUnit4.class)
 public class DeliverySlotManagerTest {
+  private static final long ONE_HOUR = 3600000;
+  private static final long THIRTY_DAYS = TimeUnit.DAYS.toMillis(30);
   private final LocalServiceTestHelper helper =
     new LocalServiceTestHelper(new LocalDatastoreServiceTestConfig());
 
@@ -62,6 +66,20 @@ public class DeliverySlotManagerTest {
     helper.tearDown();
   }
 
+  private Entity addDeliverySlotRequestEntity(DeliverySlot deliverySlot) {
+    Entity deliveryRequest = new Entity("deliverySlotRequest");
+    deliveryRequest.setProperty(DeliverySlot.Property.START_TIME.label, deliverySlot.getStartTime());
+    deliveryRequest.setProperty(DeliverySlot.Property.END_TIME.label, deliverySlot.getEndTime());
+    deliveryRequest.setProperty(DeliverySlot.Property.USER_ID.label, deliverySlot.getUserId());
+    deliveryRequest.setProperty(DeliverySlot.Property.START_LAT.label, deliverySlot.getStartLatitude());
+    deliveryRequest.setProperty(DeliverySlot.Property.START_LNG.label, deliverySlot.getStartLongitude());
+    // Add the delivery slot to datastore and set the slotId to the keyString from datastore.
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    ds.put(deliveryRequest);
+    deliverySlot.setSlotId(KeyFactory.keyToString(deliveryRequest.getKey()));
+    return deliveryRequest;
+  }
+  
   @Test
   public void testCreateSlotSuccessfully() throws ApiException, IOException, InterruptedException, BadRequestException, DataNotFoundException {
     DeliverySlotManager slotManager = new DeliverySlotManager();
@@ -106,5 +124,38 @@ public class DeliverySlotManagerTest {
     DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 3600000, 0, "user0");
     deliverySlot.setStartPoint(0.0, 0.0);
     slotManager.createDeliverySlot(deliverySlot);
+  }
+
+  @Test
+  public void testGetUsersDeliverySlotRequests() throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
+    DeliverySlot deliverySlot1 = new DeliverySlot(new Date(), 0, 2 * ONE_HOUR, "user1");
+    deliverySlot1.setStartPoint(0, 0);
+    addDeliverySlotRequestEntity(deliverySlot1);
+    DeliverySlot deliverySlot2 = new DeliverySlot(new Date(), 2 * ONE_HOUR, 3 * ONE_HOUR, "user1");
+    deliverySlot2.setStartPoint(0, 0);
+    addDeliverySlotRequestEntity(deliverySlot2);
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    assertEquals(Arrays.asList(deliverySlot1, deliverySlot2), slotManager.getUsersDeliverySlotRequests("user1"));
+  }
+
+  @Test
+  public void testGetUsersDeliverySlotRequestsWithExpiredSlots() throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
+    DeliverySlot deliverySlot1 = new DeliverySlot(new Date(), 0, 2 * ONE_HOUR, "user1");
+    deliverySlot1.setStartPoint(0, 0);
+    addDeliverySlotRequestEntity(deliverySlot1);
+    DeliverySlot deliverySlot2 = new DeliverySlot(new Date(System.currentTimeMillis() - THIRTY_DAYS - 3 * ONE_HOUR), 
+      new Date(System.currentTimeMillis() - THIRTY_DAYS - 2 * ONE_HOUR), 
+      "user1", 
+      /** canBeInThePast = */ true);
+    deliverySlot2.setStartPoint(0, 0);
+    addDeliverySlotRequestEntity(deliverySlot2);
+    DeliverySlot deliverySlot3= new DeliverySlot(new Date(System.currentTimeMillis() - THIRTY_DAYS + 2 * ONE_HOUR), 
+      new Date(System.currentTimeMillis() - THIRTY_DAYS + 3 * ONE_HOUR), 
+      "user1", 
+      /** canBeInThePast = */ true);
+    deliverySlot3.setStartPoint(0, 0);
+    addDeliverySlotRequestEntity(deliverySlot3);
+    DeliverySlotManager slotManager = new DeliverySlotManager();
+    assertEquals(Arrays.asList(deliverySlot1, deliverySlot3), slotManager.getUsersDeliverySlotRequests("user1"));
   }
 }
