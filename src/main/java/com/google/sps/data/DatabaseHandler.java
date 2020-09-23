@@ -9,7 +9,15 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 import com.google.appengine.api.datastore.Entity;
 import com.google.appengine.api.datastore.PreparedQuery;
 import com.google.appengine.api.datastore.Query;
+import com.google.maps.PlacesApi;
+import com.google.maps.model.LatLng;
+import com.google.maps.model.PlacesSearchResponse;
+import com.google.maps.model.PlacesSearchResult;
+import com.google.maps.errors.ApiException;
+import com.google.sps.data.DataNotFoundException;
 import com.opencsv.CSVReader;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Helper class for DatabaseLoaderServlet.
@@ -20,6 +28,7 @@ public class DatabaseHandler {
   private final Integer TOTAL_STOCK = 185;
   private final Integer NO_OF_LIBRARIES = 37;
   private final DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+  private final String LibraryEntity = "Library";
 
   /**
    * Given an ID, it creates a book Entity for the ID and adds it to Datastore.
@@ -41,6 +50,31 @@ public class DatabaseHandler {
       libraryEntity.setProperty("stock", BOOK_STOCK);
       datastore.put(libraryEntity);
     }
+  }
+
+  /** 
+   * Return the library Entity with id libraryId from datastore, or null if there is no library 
+   * with id libraryId in datastore.
+   */
+  private Entity getLibraryEntity(int libraryId) {
+    return datastore.prepare(new Query(LibraryEntity)
+          .setFilter(new Query.FilterPredicate("libraryId", Query.FilterOperator.EQUAL, libraryId)))
+          .asSingleEntity();
+  }
+
+  /**
+   * Adds the library with id libraryId only if it wasn't already added to datastore. 
+   */
+  private void addLibraryToDatastore(int libraryId, LatLng libraryLoc) {
+    if (getLibraryEntity(libraryId) != null) {
+      // The library has already been added to datastore.
+      return ;
+    }
+    Entity libraryEntity = new Entity(LibraryEntity);
+    libraryEntity.setProperty(OrderHandler.OrderProperty.LIBRARY_ID.label, libraryId);
+    libraryEntity.setProperty(OrderHandler.OrderProperty.LIBRARY_LAT.label, libraryLoc.lat);
+    libraryEntity.setProperty(OrderHandler.OrderProperty.LIBRARY_LNG.label, libraryLoc.lng);
+    datastore.put(libraryEntity);
   }
   
   /**
@@ -77,6 +111,26 @@ public class DatabaseHandler {
           addBookStockToDatastore(line[i]);
         }
       }
+    }
+  }
+
+  public PlacesSearchResponse getLibraryLocationsFromPlacesApi(LatLng location) throws ApiException, DataNotFoundException, IOException, InterruptedException {
+    return MapsRequest.getLibraryLocations(location);
+  }
+
+  /** 
+   * Requests the coordinates of libraries around location from Places API and adds the found 
+   * coordinates to datastore.
+   */
+  public void loadLibraryCoordinates(LatLng location) throws ApiException, DataNotFoundException, IOException, InterruptedException {
+    PlacesSearchResponse results = getLibraryLocationsFromPlacesApi(location);
+    if (results == null || results.results.length < NO_OF_LIBRARIES) {
+      // Places API returns max(number of results, 60).
+      throw new DataNotFoundException("Unable to find all libraries!");
+    }
+
+    for (int i = 0; i < NO_OF_LIBRARIES; ++ i) {
+      addLibraryToDatastore(i, results.results[i].geometry.location);
     }
   }
 }

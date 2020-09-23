@@ -25,19 +25,52 @@ import com.google.maps.model.Duration;
 import com.google.maps.model.GeocodingResult;
 import com.google.maps.model.TravelMode;
 import com.google.maps.model.LatLng;
+import com.google.maps.model.PlacesSearchResponse;
+import com.google.maps.model.PlacesSearchResult;
+import com.google.maps.PlacesApi;
+import com.google.maps.model.PlaceType;
 import java.io.IOException;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;  
+import java.io.IOException;
+import java.net.URISyntaxException;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * Class that creates a GeoApiContext variable and handles requests to maps API.
  */
 public class MapsRequest {
   private static GeoApiContext geoApiContext = null;
-  public static GeoApiContext getGeoApiContext() {
-    // TODO[ak47na]: provide Maps API key
+
+  private static String getApiKeyFromFile() throws IOException, ParseException {
+    File apiKeyFile;
+    try {
+      apiKeyFile = new File(MapsRequest.class.getResource("/apiKey.json").toURI());
+    } catch (URISyntaxException e) {
+      e.printStackTrace();
+      return null;
+    }
+    JSONParser jsonParser = new JSONParser();
+    JSONObject apiKeyJson = (JSONObject)jsonParser.parse(new FileReader(apiKeyFile));
+    return (String)apiKeyJson.get("apiKey");
+  }
+
+  public static GeoApiContext getGeoApiContext() throws IOException {
     if (geoApiContext == null) {
+      String apiKey;
+      try {
+        apiKey = getApiKeyFromFile(); 
+      } catch (ParseException e) {
+        e.printStackTrace();
+        throw new IOException();
+      }
+
       geoApiContext = new GeoApiContext
           .Builder()
-          .apiKey("")
+          .apiKey(apiKey)
           .build();
     }
     return geoApiContext;
@@ -83,5 +116,16 @@ public class MapsRequest {
       timeInSeconds += leg.duration.inSeconds;
     }
     return timeInSeconds;
+  }
+
+  public static PlacesSearchResponse getLibraryLocations(LatLng location) throws ApiException, IOException, InterruptedException {
+    return getLibraryLocations(location, 50000);
+  }
+
+  public static PlacesSearchResponse getLibraryLocations(LatLng location, int radius) throws ApiException, IOException, InterruptedException {
+    return PlacesApi.textSearchQuery(getGeoApiContext(), PlaceType.LIBRARY)
+    .location(location)
+    .radius(radius)
+    .await();
   }
 }

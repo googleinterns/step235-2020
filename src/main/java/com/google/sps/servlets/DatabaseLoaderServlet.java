@@ -14,6 +14,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import com.google.appengine.api.datastore.DatastoreService;
 import com.google.appengine.api.datastore.DatastoreServiceFactory;
+import com.google.maps.errors.ApiException;
+import com.google.maps.model.LatLng;
+import com.google.sps.data.DataNotFoundException;
 
 /**
  * When user goes to /load-database, he needs to wait for the database to get loaded.
@@ -30,6 +33,7 @@ import com.google.appengine.api.datastore.DatastoreServiceFactory;
 public class DatabaseLoaderServlet extends HttpServlet {
 
   private final DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+  private final LatLng LONDON = new LatLng(51.509865, -0.1278);
 
   @Override
   public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
@@ -44,7 +48,13 @@ public class DatabaseLoaderServlet extends HttpServlet {
     }
     DatabaseHandler databaseHandler = new DatabaseHandler();
     databaseHandler.loadBookStocksFromCSV(csvFile);
-    // TODO load Libraries coordinates
+    //Load Libraries coordinates.
+    try {
+      databaseHandler.loadLibraryCoordinates(LONDON);
+    } catch (ApiException | DataNotFoundException | InterruptedException e) {
+      response.sendError(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
+      return ;
+    }
 
     response.setContentType("text/html");
     // User will be notified when the database is fully loaded.
