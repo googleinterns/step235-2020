@@ -64,6 +64,23 @@ public class OrderHandler {
   }
 
   /**
+   * Given a librray ID, will create a LibraryPoint Object extracting the
+   * latitudine and longitude from datastore.
+   * 
+   */
+
+  public LibraryPoint createLibraryPoint(int libraryId)
+      throws BadRequestException, ApiException, IOException, InterruptedException, DataNotFoundException {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Entity libraryEntity = datastore.prepare(new Query("Library")
+          .setFilter(new Query.FilterPredicate("libraryId", Query.FilterOperator.EQUAL, libraryId)))
+          .asSingleEntity();
+    double lat = (double) libraryEntity.getProperty(OrderProperty.LIBRARY_LAT.label);
+    double lng = (double) libraryEntity.getProperty(OrderProperty.LIBRARY_LNG.label);
+    return new LibraryPoint(lat, lng, libraryId);
+  }
+
+  /**
    * Creates an "Order" Entity and adds it to datastore. Each order contains a set of books and the
    * library that has all the requested books.
    */
@@ -100,9 +117,8 @@ public class OrderHandler {
         // there is no library that has the book bookId, thus the book can't be ordered.
         outOfStookBookIds.add(bookId);
       } else {
-        LibraryPoint library = new LibraryPoint((double) closestLibrary.getProperty(OrderProperty.LIBRARY_LAT.label),
-            (double) closestLibrary.getProperty(OrderProperty.LIBRARY_LNG.label),
-            ((Number)closestLibrary.getProperty(OrderProperty.LIBRARY_ID.label)).intValue());
+        int libraryId = ((Number)closestLibrary.getProperty(OrderProperty.LIBRARY_ID.label)).intValue();
+        LibraryPoint library = createLibraryPoint(libraryId);
 
         if (!libraryBookIds.containsKey(library)) {
           libraryBookIds.put(library, new ArrayList<>());
@@ -138,9 +154,9 @@ public class OrderHandler {
     int closestLibraryIndex = -1;
     int index = 0;
     for (Entity library : libraries) {
+      int libraryId = ((Number)library.getProperty(OrderProperty.LIBRARY_ID.label)).intValue();
       int timeFromAddressToLibrary = pathFinder.getTimeInSecondsBetweenPoints(address,
-          new LibraryPoint((double) library.getProperty("libraryLatitude"), (double) library.getProperty("libraryLongitude"),
-              ((Number)library.getProperty("libraryId")).intValue()));
+          createLibraryPoint(libraryId));
 
       if (timeFromAddressToLibrary < minTimeFromAddressToLibrary) {
         minTimeFromAddressToLibrary = timeFromAddressToLibrary;

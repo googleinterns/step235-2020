@@ -62,44 +62,57 @@ public class OrderHandlerTest {
   public void setUp() throws ApiException, BadRequestException, DataNotFoundException, IOException, InterruptedException {
     helper.setUp();
     orderHandler = new OrderHandler(new ManhattanDistancePathFinder());
-    libraries = new ArrayList<>();
-    libraries.add(new LibraryPoint(8, 1, 0));
-    libraries.add(new LibraryPoint(7, 4, 1));
-    libraries.add(new LibraryPoint(6, 6, 2));
-    libraries.add(new LibraryPoint(0, 0, 3));
+    putLibraryEntity(8, 1, 0);
+    putLibraryEntity(7, 4, 1);
+    putLibraryEntity(6, 6, 2);
+    putLibraryEntity(0, 0, 3);
     Point address = new Point(3, 3);
     bookIds = Arrays.asList("book1", "book2", "book3", "book4");
   }
 
-  private Entity getLibraryEntity(Entity book, LibraryPoint library, int stock) {
-    Key bookKey = book.getKey();
-    Entity libraryEntity = new Entity("LibraryStock", bookKey);
-    libraryEntity.setProperty("libraryLatitude", library.latitude);
-    libraryEntity.setProperty("libraryLongitude", library.longitude);
-    libraryEntity.setProperty("libraryId", library.getLibraryId());
-    libraryEntity.setProperty("stock", stock);
-    return libraryEntity;
+  private void putLibraryEntity(double lat, double lng, int id) {
+    DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
+    Entity library = new Entity("Library");
+    library.setProperty("libraryLatitude", lat);
+    library.setProperty("libraryLongitude", lng);
+    library.setProperty("libraryId", id);
+    ds.put(library);
   }
 
-  private void addBookToDatastore(DatastoreService ds, String bookId, List<LibraryPoint> bookLibraries) {
+  private Entity getLibraryEntity(Entity book, int libraryId, int stock) {
+    Key bookKey = book.getKey();
+    Entity libraryStock = new Entity("LibraryStock", bookKey);
+    libraryStock.setProperty("libraryId", libraryId);
+    libraryStock.setProperty("stock", stock);
+    return libraryStock;
+  }
+
+  private void addBookToDatastore(DatastoreService ds, String bookId, List<Integer> bookLibraries) {
     Entity book = new Entity("Book");
     book.setProperty("bookId", bookId);
     book.setProperty("totalStock", 5);
     ds.put(book);
-    for (LibraryPoint library : bookLibraries) {
-      ds.put(getLibraryEntity(book, library, 5));
+    for (Integer library : bookLibraries) {
+      ds.put(getLibraryEntity(book, library, 1));
     }
   }
   private void inintializeBooksDatastore() {
     DatastoreService ds = DatastoreServiceFactory.getDatastoreService();
-    addBookToDatastore(ds, "book1", Arrays.asList(libraries.get(0), libraries.get(2)));
-    addBookToDatastore(ds, "book2", Arrays.asList(libraries.get(0), libraries.get(1)));
-    addBookToDatastore(ds, "book3", Arrays.asList(libraries.get(0), libraries.get(2), libraries.get(3)));
+    addBookToDatastore(ds, "book1", Arrays.asList(0, 2));
+    addBookToDatastore(ds, "book2", Arrays.asList(0, 1));
+    addBookToDatastore(ds, "book3", Arrays.asList(0, 2, 3));
     addBookToDatastore(ds, "book4", Arrays.asList());
   }
 
   private void createOrder(CourierStop library, CourierStop recipient, List<String> bookIds, String userId) {
     String orderKey = orderHandler.addOrderToDatastore((LibraryPoint)library.getPoint(), bookIds, userId, recipient.getPoint());
+  }
+
+  @Test
+  public void testCreateLibrarypoint() throws BadRequestException, ApiException, IOException, InterruptedException,
+      DataNotFoundException {
+    LibraryPoint expected = new LibraryPoint(8, 1, 0);
+    Assert.assertEquals(expected, orderHandler.createLibraryPoint(0));
   }
 
   @Test
