@@ -21,6 +21,7 @@ import com.google.appengine.api.datastore.EntityNotFoundException;
 import com.google.appengine.api.datastore.FetchOptions;
 import com.google.appengine.api.datastore.KeyFactory;
 import com.google.appengine.api.datastore.Query;
+import com.google.appengine.api.datastore.Query.SortDirection;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.maps.model.LatLng;
@@ -90,7 +91,8 @@ public class DeliverySlotManager {
 
     DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
     Query query = new Query("deliverySlotRequest").setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, userId));
-    List<Entity> results = datastore.prepare(query).asList(FetchOptions.Builder.withDefaults());
+    List<Entity> results = datastore.prepare(query.addSort(DeliverySlot.Property.START_TIME.label, SortDirection.ASCENDING))
+      .asList(FetchOptions.Builder.withDefaults());
     
     for (Entity deliverySlotEntity : results) {
       DeliverySlot deliverySlot = new DeliverySlot((Date)deliverySlotEntity.getProperty(DeliverySlot.Property.START_TIME.label),

@@ -221,8 +221,11 @@ async function displayDeliverySlots() {
       return response.json();
     }
   }).then(slots => {
-    // Display each delivery slot as a list element.
+    // Add the past delivery slots in 'past-delivery-slots-container'.
+    const pastDeliverySlotsContainer = document.getElementById('past-delivery-slots-container');
+    // Add the current and future delivery slots in 'delivery-slots-container'.
     const deliverySlotsContainer = document.getElementById('delivery-slots-container');
+    // Display each delivery slot as a list element.
     for (const slot in slots) {
       deliverySlotElem = createUlElement(`Delivery slot with ID: ${slots[slot].slotId}`);
       slotTime = createListElement(`Starts at ${slots[slot].startTime} and ends at ${slots[slot].endTime}`);
@@ -231,7 +234,12 @@ async function displayDeliverySlots() {
       // TODO[ak47na]: improve the way delivery slots are shown (e.g. add line breaks between them).
       deliverySlotElem.appendChild(slotTime);
       deliverySlotElem.appendChild(slotAddress);
-      deliverySlotsContainer.appendChild(deliverySlotElem);
+      if (new Date(slots[slot].startTime) < new Date()) {
+        // The slot is in the past.
+        pastDeliverySlotsContainer.appendChild(deliverySlotElem);
+      } else {
+        deliverySlotsContainer.appendChild(deliverySlotElem);
+      }
     }
   }).catch(error => {
     alert(error);
