@@ -84,7 +84,9 @@ public class DeliverySlot {
   }
 
   /**
-   * Creates a delivery slot given a date, start and end times in miliseconds and the user id.
+   * Creates a delivery slot given a date, start and end times in miliseconds and the user id. If 
+   * canBeInThePast is set to true, the starting time can be past the current time. The boolean is
+   * necessary for creating and displaying the history of delivery slots.
    */
   public DeliverySlot(Date startTime, Date endTime, String userId, boolean canBeInThePast) throws BadRequestException {
     if (startTime.compareTo(endTime) > 0) {
