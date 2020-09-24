@@ -156,6 +156,7 @@ public class DeliverySlotManagerTest {
     deliverySlot3.setStartPoint(0, 0);
     addDeliverySlotRequestEntity(deliverySlot3);
     DeliverySlotManager slotManager = new DeliverySlotManager();
-    assertEquals(Arrays.asList(deliverySlot1, deliverySlot3), slotManager.getUsersDeliverySlotRequests("user1"));
+    // Delivery slots are retrieved in ascending order with respect to the start time.
+    assertEquals(Arrays.asList(deliverySlot3, deliverySlot1), slotManager.getUsersDeliverySlotRequests("user1"));
   }
 }
