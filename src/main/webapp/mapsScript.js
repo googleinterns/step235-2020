@@ -36,10 +36,10 @@ function initMap(centerLat, centerLng, zoomLevel = 12) {
   return map;
 }
 
-/** 
- * Adds the waypoint as markers to the map and draws a polyline between them to show the route.
+/**
+ * Returns the latitude and longitude of the map center as the average of coordinates for all the waypoints .
  */
-function addMarkersToMap(waypoints) {
+function getMapCenter(waypoints) {
   centerLat = 0;
   centerLng = 0;
   numberOfWaypoints = waypoints.length;
@@ -47,24 +47,74 @@ function addMarkersToMap(waypoints) {
     centerLat += waypoints[waypoint].point.latitude;
     centerLng += waypoints[waypoint].point.longitude;
   }
+  return {
+    'latitude': centerLat / numberOfWaypoints,
+    'longitude': centerLng / numberOfWaypoints
+  };
+}
 
+/** 
+ * Adds the waypoint as markers to the map and draws a polyline between them to show the route.
+ */
+function addMarkersAndDetailsToMap(waypoints) {
   let waypointsCoordinates = [];
-  map = initMap(centerLat / numberOfWaypoints, centerLng / numberOfWaypoints);
+  const center = getMapCenter(waypoints);
+  map = initMap(center.latitude, center.longitude);
   for (const waypoint in waypoints) {
     waypointCoordinates = {
       lat: waypoints[waypoint].point.latitude, 
       lng: waypoints[waypoint].point.longitude
     };
-    // Add the current waypoint to the map.
-    const waypointMarker = new google.maps.Marker({
-      position: waypointCoordinates,
-      map: map,
-      title: `waypoint${waypoint+1}`
-    });
+    // Add the current waypoint to the map and show the instructions for it onclick.
+    addMarkerToMap(waypointCoordinates, map, `waypoint${waypoint+1}`, getWaypointDescription(waypoint, waypoints));
     waypointsCoordinates.push(waypointCoordinates);
   }
-
+  // Show the path between waypoints on the map.
   addPolyLineBetweenWaypoints(map, waypointsCoordinates);
+}
+
+/**
+ * Returns a string with the delivery instructions for the waypoint-th element in waypoints.
+ */
+function getWaypointDescription(waypoint, waypoints) {
+  let description;
+  if (waypoint == 0 && waypoints[waypoint].orderKeys.length == 0) {
+    // The point is the starting point.
+    description = 'Start Here';
+  } else {
+    if (waypoints[waypoint].point.hasOwnProperty('libraryId')) {
+    // The point is a library, thus, order must be taken from it.
+    description = 'Borrow books for orders:';
+    } else {
+      // The point is the home of a recipient, thus, orders must be delivered.
+      description = 'Deliver orders:'
+    }
+  }
+  // Add the IDs of orders to the description of the waypoint.
+  for (const index in waypoints[waypoint].orderKeys) {
+    description += `\n${waypoints[waypoint].orderKeys[index]}`;
+  }
+  return description;
+}
+
+/**
+ * Adds a market on the map with a title and a description.
+ * @param {LatLng} position 
+ * @param {Map} map 
+ * @param {String} title 
+ * @param {String} description 
+ */
+function addMarkerToMap(position, map, title, description) {
+  const marker = new google.maps.Marker({
+    position: position,
+    map: map, 
+    title: title
+  });
+
+  const infoWindow = new google.maps.InfoWindow({content: description});
+  marker.addListener('click', () => {
+    infoWindow.open(map, marker);
+  });
 }
 
 /** 

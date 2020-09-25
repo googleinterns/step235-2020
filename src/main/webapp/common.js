@@ -288,7 +288,7 @@ async function displayJourneys() {
 function createViewOnMapButton(waypoints) {
   const button = document.createElement('button');
   button.innerText = 'View journey map';
-  button.onclick = addMarkersToMap(waypoints);
+  button.onclick = addMarkersAndDetailsToMap(waypoints);
   return button;
 }
 
