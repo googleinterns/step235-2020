@@ -135,7 +135,7 @@ public final class NewRequestServletTest {
    */
   @Test
   public void testNewRequestsAutomaticallyCreatesCourierProfile() throws IOException, ServletException, FirebaseAuthException {
-    when(request.getParameter("delivery-date")).thenReturn("2020-09-26");
+    when(request.getParameter("delivery-date")).thenReturn("2020-10-26");
     when(request.getParameter("start-time")).thenReturn("05:15");
     when(request.getParameter("end-time")).thenReturn("15:10");
     when(request.getParameter("timezone-offset-minutes")).thenReturn("180");

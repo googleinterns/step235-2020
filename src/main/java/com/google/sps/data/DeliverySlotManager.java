@@ -84,6 +84,33 @@ public class DeliverySlotManager {
   }
 
   /**
+   * Deltes the expired delivery slots of user with id userId from Datastore.
+   * @param userId
+   * @throws EntityNotFoundException
+   * @throws ApiException
+   * @throws IOException
+   * @throws InterruptedException
+   * @throws DataNotFoundException
+   * @throws BadRequestException
+   */
+  public void removeUsersExpiredDeliverySlots(String userId) throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
+    DatastoreService datastore = DatastoreServiceFactory.getDatastoreService();
+    Query query = new Query("deliverySlotRequest").setFilter(new Query.FilterPredicate("uid", Query.FilterOperator.EQUAL, userId));
+    List<Entity> results = datastore.prepare(query.addSort(DeliverySlot.Property.START_TIME.label, SortDirection.ASCENDING))
+      .asList(FetchOptions.Builder.withDefaults());
+    
+    for (Entity deliverySlotEntity : results) {
+      DeliverySlot deliverySlot = new DeliverySlot((Date)deliverySlotEntity.getProperty(DeliverySlot.Property.START_TIME.label),
+      (Date)deliverySlotEntity.getProperty(DeliverySlot.Property.END_TIME.label),
+      (String)deliverySlotEntity.getProperty(DeliverySlot.Property.USER_ID.label),
+      /** canBeInThePast = */ true);
+      if (isExpired(deliverySlot)) {
+        datastore.delete(deliverySlotEntity.getKey());
+      } 
+    }
+  }
+
+  /**
    * Returns a list with all the deliverySlotRequests of user with id userId.
    */
   public List<DeliverySlot> getUsersDeliverySlotRequests(String userId) throws EntityNotFoundException, ApiException, IOException, InterruptedException, DataNotFoundException, BadRequestException {
@@ -99,9 +126,7 @@ public class DeliverySlotManager {
       (Date)deliverySlotEntity.getProperty(DeliverySlot.Property.END_TIME.label),
       (String)deliverySlotEntity.getProperty(DeliverySlot.Property.USER_ID.label),
       /** canBeInThePast = */ true);
-      if (isExpired(deliverySlot)) {
-        datastore.delete(deliverySlotEntity.getKey());
-      } else {
+      if (!isExpired(deliverySlot)) {
         deliverySlot.setStartPoint((double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LAT.label),
           (double)deliverySlotEntity.getProperty(DeliverySlot.Property.START_LNG.label));
         deliverySlot.setSlotId(KeyFactory.keyToString(deliverySlotEntity.getKey()));

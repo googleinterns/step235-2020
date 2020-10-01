@@ -83,7 +83,8 @@ public class DeliverySlotManagerTest {
   @Test
   public void testCreateSlotSuccessfully() throws ApiException, IOException, InterruptedException, BadRequestException, DataNotFoundException {
     DeliverySlotManager slotManager = new DeliverySlotManager();
-    DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 0, 3600000, "user0");
+    Date startDate = new Date(System.currentTimeMillis() + ONE_HOUR);
+    DeliverySlot deliverySlot = new DeliverySlot(startDate, 0, 3600000, "user0");
     deliverySlot.setStartPoint(0.0, 0.0);
     slotManager.createDeliverySlot(deliverySlot);
     // Query datastore and verify that the request is added.
@@ -98,14 +99,14 @@ public class DeliverySlotManagerTest {
     assertEquals("user0", deliverySlots.get(0).getProperty(DeliverySlot.Property.USER_ID.label));
     assertEquals(0.0, deliverySlots.get(0).getProperty(DeliverySlot.Property.START_LAT.label));
     assertEquals(0.0, deliverySlots.get(0).getProperty(DeliverySlot.Property.START_LNG.label));
-    assertEquals(new Date(2020, 9, 26), deliverySlots.get(0).getProperty(DeliverySlot.Property.START_TIME.label));
-    assertEquals(new Date(2020, 9, 26, 1, 0), deliverySlots.get(0).getProperty(DeliverySlot.Property.END_TIME.label));
+    assertEquals(startDate, deliverySlots.get(0).getProperty(DeliverySlot.Property.START_TIME.label));
+    assertEquals(new Date(startDate.getTime() + ONE_HOUR), deliverySlots.get(0).getProperty(DeliverySlot.Property.END_TIME.label));
   }
 
   @Test
   public void testGetSlotSuccessfully() throws ApiException, IOException, InterruptedException, BadRequestException, DataNotFoundException, EntityNotFoundException {
     DeliverySlotManager slotManager = new DeliverySlotManager();
-    DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 0, 3600000, "user0");
+    DeliverySlot deliverySlot = new DeliverySlot(new Date(System.currentTimeMillis() + ONE_HOUR), 0, 3600000, "user0");
     deliverySlot.setStartPoint(0.0, 0.0);
     slotManager.createDeliverySlot(deliverySlot);
     // The delivery slot request in datastore should be the one added in the previous line.
@@ -121,7 +122,7 @@ public class DeliverySlotManagerTest {
   @Test(expected = BadRequestException.class)
   public void testCreateSlotInvalidDate() throws IOException, BadRequestException {
     DeliverySlotManager slotManager = new DeliverySlotManager();
-    DeliverySlot deliverySlot = new DeliverySlot(new Date(2020, 9, 26), 3600000, 0, "user0");
+    DeliverySlot deliverySlot = new DeliverySlot(new Date(System.currentTimeMillis() + ONE_HOUR), 3600000, 0, "user0");
     deliverySlot.setStartPoint(0.0, 0.0);
     slotManager.createDeliverySlot(deliverySlot);
   }
